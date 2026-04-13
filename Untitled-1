@@ -1,0 +1,179 @@
+@.claude/rules/naming.md 
+why use the PascalCase? is it based on standard & your recommanded approch? 
+as per my suggest is used the cameCase only what you think? 
+
+
+
+Also from now whenever any table or field needs to added into the database you create only migration file into the "/var/www/html/Nimble/nimble-api/prisma/migrations" dir, & then I just need to run the below commands
+- npx prisma migrate dev --name <migration_name>
+- npx prisma db pull
+- npx prisma generate
+are you cover all this things into the @.claude/rules/prisma.md file?
+
+
+
+I think we not direct changes into the prisma schema, we have to generate the migration file & run the command so it automatically generate into the database & update the schema based on that
+what do you think?
+
+
+
+Please use the Approach A is the correct Prisma way. & update the @.claude/rules/prisma.md file based on this 
+
+
+
+if any new table & fields added into the existing table then you generate the migration files + prisma schema update from your end
+so when I run the below command 
+npx prisma migrate dev --name <name>
+it will update the database right?
+
+
+
+I have notice the platform_tokens created table, which have not the id(primary key), I think we need to add the primary key into all the tables based on the standard.
+
+Also we need to make sure that primary key & below fields must include into the newly generated tables as per the standard, so check it, correct it(create a migration files to update the existing tables I thinks this is the best way to aline all the things), also store into the rules so infuture we not repeat the same mistake
+- created_at
+- modified_at
+
+Also I have notice the issue into the below tables
+- cin7_stock_adjustments: completed_date, created_date, updated_date, created_at, updated_at
+- cin7_purchase_orders: required_date, completed_date, created_date, updated_date, created_at, updated_at
+- cin7_products: created_date, updated_date, created_at, updated_at
+- cin7_order_line_items: created_at, updated_at
+- cin7_orders: order_date, modified_date, created_at, updated_at
+- cin7_inventory: created_at, updated_at
+- cin7_credit_notes: created_date, updated_date, created_at, updated_at
+- cin7_contacts: created_date, updated_date, created_at, updated_at
+- cin7_branches: created_date, updated_date, created_at, updated_at
+
+Into above tables I think duplicate fields for created & updated, we need to used the created_at & modified_at based on our standard, so please remove the duplicte dates
+Also we need to add the index keys into the all required fields which will used to check the data synced, exist or not, and for the faster retrieval of data
+
+what do you think?
+Please suggest the best & standard & you recommanded approch
+
+
+
+these come from the Cin7 API and represent when Cin7 created/updated the record
+the above is right but we need to stored into the our defined structure like stored created_at => created_date, modified_at => updated_date
+what do you think? please suggest the best & standard + your recommandation approch?
+
+
+
+but if we keep the exactly 4 timestamp columns then it is unnecessory I think
+for the other plateform also have this type of fields, please check it(into API docs) first for all other plateforms then we will finalize what we can do
+
+
+
+I think this is irrelevet because we alreay have use the cin7_ prefix for the all the tables of that
+also if we keep the created_date & updated_date as it is then the table have the four column
+which is not based on standard I think?
+
+
+okay so let keep the for column like below 
+src_created_at => Cin7's created time
+src_modified_at => Cin7's last-modified time
+created_at => When we inserted the row
+modified_at => When we last upserted
+what do you think?
+also we can used the same for the other infuture plateforms right?
+
+
+
+Also one more thing I need to know why the src_modified_at => consider as sync key?
+
+
+so based on above the id(primary key), created_at, modified_at is always into include into all the current & future table, which is based on standard right?
+Please check the existing tables & update it based on standard & create a migration files to update the existing tables I thinks this is the best way to aline all the things
+
+
+also I think we need to define one standard strucutre for the datatypes that which datatype we need to used for which type of data, so no datatype mismatch like one table have the price & used the decimal but into another table also have the price that use the float, which is inconsistance
+so please create a one file based on the current database + all plateforms API response data
+What do you thik? act as a senior + experienced persion
+Please suggest me the standard & best way + your recommanded approch
+
+
+If you need then check the API docs for all the plateforms then we can decide the dataypes so no back & forth
+
+
+Also infuture if any new datatype comes from any plateform then we can update the datatype structure based on that
+after the above define, we also need to make sure that is it based on the standard for the mysql & based on your recommandation? also no more space consume aftr the above changes into the database, because we have large data I think from all the plateforms
+so database should not take long time to get, insert, update the data, what do you think?
+Also please create a migration file if existing table & fields not matched with the defined datatype architecture, update the existing files if you need
+
+
+
+Also we need to create a constant file for the API URL, comparision string, success/fail message etc... Not use the static string like cin7:orders, cin7:contacts etc... into the code
+all should be from constants so infutre anything change from the 5 plateforms then we only need to update the constants so no need to change into the code, after the update constant all working as it is
+what do you think? please suggest based on standard & your recommanded approch
+Please update the rules for this also if you need
+
+
+
+Now act as a senior + experience developer & check the current codebase & rules, & find out the issues, missing things, & based on that suggest the best & standard & your recommanded approch
+
+
+
+what we need to do for avoid this type of issues after the intergrate any another plateform? act as senior + experience developer, please suggest the best & standard way + your recommanded approch to avoide it into the Vibe coding style
+
+
+
+Now please check the above attached file, make sure all the integrate based on that, also if you need to update that file & other plateform files based on the above define structure & changes, fixed issues, then please update it
+so infuture no any issue getting like above, data properly inserted & working fine properly & correctly
+
+
+
+As per the requirement we need to get the below module/API data & store into our database table
+-Sales Orders
+-Order Line Items
+-Customers
+-Products
+-Inventory
+-Purchase orders (supplier data)
+-Returns/refunds
+-Stock adjustments
+I need to knoww that all the above is covered or not? give me the module/API if use any alternative or add newly suggested from your end
+also we need to make sure that all the current codebase is properly working for the above APIs to get the data & correctly sotred into the our current database tables
+
+
+
+Also we need to make sure that primary key, indexes, datatypes, properly added into the database based on the standard so no any error getting for the data sync & other operations
+
+
+
+Please let me know how & when the cin7 data is getting & insert into the database?
+where I need to store the credential for the authentication? so I can test the cin7 & moved on another plateform integration
+
+
+
+so you have done with the above provided prompt right?
+
+
+
+Now please check the cin7 & shopify plateform integration is based on the defined standard, based on the your recommanded approch
+same pattern follow into the shopify integration like cin7 for consistency 
+Act as the senior + experience developer
+
+
+
+also check the current codebase, is it based on the defined rules?
+
+
+
+As per the requirement we need to get the below module/API data & store into our database table for the shopify
+-Orders
+-Order Line Items
+-Customers
+-Products
+-Add-to-cart events
+I need to know that all the above is covered or not? give me the module/API if use any alternative or add newly suggested from your end
+also we need to make sure that all the current codebase is properly working for the above APIs to get the data & correctly sotred into the our current database tables
+
+
+
+Please let me know how & when the shopify data is getting & insert into the database?
+where I need to store the credential for the authentication? so I can test the cin7 & moved on another plateform integration
+
+
+
+1. Please check the attached file, update it based on the our defined & used the standard like cin7, shopify
+2. Also consdier the rule md file whenever you make any database related changes, also create a migration file & update the prisma schema from your end, so after that when I run the migration file then database will update
