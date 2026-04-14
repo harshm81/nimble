@@ -1,6 +1,8 @@
-import { cin7Queue, shopifyQueue } from './queues';
+import { cin7Queue, shopifyQueue, ga4Queue, klaviyoQueue } from './queues';
 import { CIN7_JOBS } from '../constants/cin7';
 import { SHOPIFY_JOBS } from '../constants/shopify';
+import { GA4_JOBS } from '../constants/ga4';
+import { KLAVIYO_JOBS } from '../constants/klaviyo';
 
 export async function registerSchedulers(): Promise<void> {
   await Promise.all([
@@ -20,16 +22,16 @@ export async function registerSchedulers(): Promise<void> {
     shopifyQueue.add(SHOPIFY_JOBS.PRODUCTS, {}, { repeat: { pattern: '30 * * * *' } }),
     // INVENTORY and PRODUCT_VARIANTS are not cron-scheduled — enqueued by the products job after completion
 
-    // GA4 — worker not yet implemented
-    // ga4Queue.add(GA4_JOBS.DAILY, {}, { repeat: { pattern: '0 3 * * *' } }),
+    // GA4
+    ga4Queue.add(GA4_JOBS.DAILY, {}, { repeat: { pattern: '0 3 * * *' } }),
 
     // Facebook — worker not yet implemented
     // facebookQueue.add(FACEBOOK_JOBS.DAILY, {}, { repeat: { pattern: '0 4 * * *' } }),
 
-    // Klaviyo — worker not yet implemented
-    // klaviyoQueue.add(KLAVIYO_JOBS.CAMPAIGNS, {}, { repeat: { pattern: '0 5 * * *' } }),
-    // klaviyoQueue.add(KLAVIYO_JOBS.PROFILES,  {}, { repeat: { pattern: '0 */6 * * *' } }),
-    // klaviyoQueue.add(KLAVIYO_JOBS.EVENTS,    {}, { repeat: { pattern: '40 * * * *' } }),
-    // klaviyoQueue.add(KLAVIYO_JOBS.FLOWS,     {}, { repeat: { pattern: '5 5 * * *' } }),
+    // Klaviyo
+    klaviyoQueue.add(KLAVIYO_JOBS.CAMPAIGNS, {}, { repeat: { pattern: '0 5 * * *' } }),
+    klaviyoQueue.add(KLAVIYO_JOBS.PROFILES,  {}, { repeat: { pattern: '0 */6 * * *' } }),
+    klaviyoQueue.add(KLAVIYO_JOBS.EVENTS,    {}, { repeat: { pattern: '40 * * * *' } }),
+    klaviyoQueue.add(KLAVIYO_JOBS.FLOWS,     {}, { repeat: { pattern: '5 5 * * *' } }),
   ]);
 }

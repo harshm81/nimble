@@ -4,6 +4,8 @@ import { BullMQAdapter } from '@bull-board/api/bullMQAdapter';
 import { ExpressAdapter } from '@bull-board/express';
 import { config } from '../config';
 import prisma from '../db/prismaClient';
+import { logger } from '../utils/logger';
+import { SHOPIFY_PLATFORM } from '../constants/shopify';
 import { connection } from '../queue/connection';
 import {
   cin7Queue,
@@ -28,6 +30,29 @@ app.use((req: Request, _res: Response, next: NextFunction) => {
 
 // Webhook routes — must be mounted before express.json() to preserve raw body
 app.use(shopifyCartWebhookRouter);
+
+app.use(express.json());
+
+// Shopify token seed — store the permanent Admin API access token in platform_tokens.
+// Run once after copying the token from: Shopify Admin → Apps → your app → API credentials → "Reveal token"
+// POST /auth/shopify/token   body: { "token": "shpat_xxxx" }
+app.post('/auth/shopify/token', async (req: Request, res: Response) => {
+  const { token } = req.body as { token?: string };
+
+  if (!token || !token.startsWith('shpat_')) {
+    res.status(400).json({ error: 'Body must contain { "token": "shpat_..." }' });
+    return;
+  }
+
+  await prisma.platformToken.upsert({
+    where: { platform: SHOPIFY_PLATFORM },
+    create: { platform: SHOPIFY_PLATFORM, accessToken: token },
+    update: { accessToken: token },
+  });
+
+  logger.info({ platform: SHOPIFY_PLATFORM }, 'Shopify Admin API token stored');
+  res.json({ ok: true });
+});
 
 // Health — liveness
 app.get('/health', (_req: Request, res: Response) => {

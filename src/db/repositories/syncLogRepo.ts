@@ -2,7 +2,7 @@ import prisma from '../prismaClient';
 
 export async function logQueued(platform: string, jobType: string): Promise<bigint> {
   const row = await prisma.syncLog.create({
-    data: { platform, job_type: jobType, status: 'queued' },
+    data: { platform, jobType, status: 'queued' },
     select: { id: true },
   });
   return row.id;
@@ -29,10 +29,10 @@ export function logSuccess(
     where: { id },
     data: {
       status: 'success',
-      records_fetched: data.recordsFetched,
-      records_saved: data.recordsSaved,
-      records_skipped: data.recordsSkipped,
-      duration_ms: data.durationMs,
+      recordsFetched: data.recordsFetched,
+      recordsSaved: data.recordsSaved,
+      recordsSkipped: data.recordsSkipped,
+      durationMs: data.durationMs,
     },
   });
 }
@@ -48,8 +48,8 @@ export function logFailure(
     where: { id },
     data: {
       status: 'failed',
-      error_message: data.errorMessage,
-      duration_ms: data.durationMs,
+      errorMessage: data.errorMessage,
+      durationMs: data.durationMs,
     },
   });
 }

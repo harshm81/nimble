@@ -30,6 +30,7 @@ const envSchema = z.object({
 
   KLAVIYO_API_KEY: z.string().optional(),
   KLAVIYO_CONVERSION_METRIC_ID: z.string().optional(),
+  KLAVIYO_SYNC_EVENT_TYPES: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

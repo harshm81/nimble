@@ -5,6 +5,8 @@ import { connection } from './src/queue/connection';
 import { registerSchedulers } from './src/queue/scheduler';
 import './src/workers/cin7Worker';
 import './src/workers/shopifyWorker';
+import './src/workers/klaviyoWorker';
+import './src/workers/ga4Worker';
 import app from './src/server/app';
 import { logger } from './src/utils/logger';
 

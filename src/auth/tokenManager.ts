@@ -27,12 +27,20 @@ export async function getAuthHeaders(
     }
 
     case SHOPIFY_PLATFORM: {
-      const token = await getOrRefreshToken(SHOPIFY_PLATFORM);
-      return { 'X-Shopify-Access-Token': token };
+      // Shopify custom app offline access tokens are permanent — no refresh needed.
+      // Token is obtained once via OAuth code exchange (POST /admin/oauth/access_token)
+      // and stored in platform_tokens. Seed it by hitting GET /auth/shopify/setup.
+      const row = await prisma.platformToken.findUnique({ where: { platform: SHOPIFY_PLATFORM } });
+      if (!row) {
+        throw new Error(
+          'No Shopify token found in platform_tokens — seed it once: POST /auth/shopify/token { "token": "shpat_..." }'
+        );
+      }
+      return { 'X-Shopify-Access-Token': row.accessToken };
     }
 
     case FACEBOOK_PLATFORM: {
-      const token = await getOrRefreshToken(FACEBOOK_PLATFORM);
+      const token = await getOrRefreshFacebookToken();
       return { access_token: token };
     }
   }
@@ -40,55 +48,21 @@ export async function getAuthHeaders(
 
 // GA4 excluded — auth handled entirely by googleapis SDK
 
-async function getOrRefreshToken(platform: typeof SHOPIFY_PLATFORM | typeof FACEBOOK_PLATFORM): Promise<string> {
-  const row = await prisma.platformToken.findUnique({ where: { platform } });
+async function getOrRefreshFacebookToken(): Promise<string> {
+  const row = await prisma.platformToken.findUnique({ where: { platform: FACEBOOK_PLATFORM } });
 
   if (!row) {
-    throw new Error(`No token found for ${platform} — run initial token setup`);
+    throw new Error(`No token found for ${FACEBOOK_PLATFORM} — run initial token setup`);
   }
 
   const expiringWithin5Min =
-    row.expires_at && row.expires_at < new Date(Date.now() + 5 * 60_000);
+    row.expiresAt && row.expiresAt < new Date(Date.now() + 5 * 60_000);
 
   if (expiringWithin5Min) {
-    return platform === SHOPIFY_PLATFORM
-      ? refreshShopifyToken()
-      : refreshFacebookToken(row.access_token);
+    return refreshFacebookToken(row.accessToken);
   }
 
-  return row.access_token;
-}
-
-async function refreshShopifyToken(): Promise<string> {
-  const response = await axios.post(
-    `https://${config.SHOPIFY_SHOP_NAME}.myshopify.com/admin/oauth/access_token`,
-    {
-      client_id: config.SHOPIFY_CLIENT_ID,
-      client_secret: config.SHOPIFY_CLIENT_SECRET,
-      grant_type: 'client_credentials',
-    }
-  );
-
-  const { access_token, expires_in } = response.data as {
-    access_token: string;
-    expires_in: number;
-  };
-
-  await prisma.platformToken.upsert({
-    where: { platform: SHOPIFY_PLATFORM },
-    create: {
-      platform: SHOPIFY_PLATFORM,
-      access_token,
-      expires_at: new Date(Date.now() + expires_in * 1000),
-    },
-    update: {
-      access_token,
-      expires_at: new Date(Date.now() + expires_in * 1000),
-    },
-  });
-
-  logger.info({ platform: SHOPIFY_PLATFORM, msg: 'Access token refreshed' });
-  return access_token;
+  return row.accessToken;
 }
 
 async function refreshFacebookToken(currentToken: string): Promise<string> {
@@ -114,12 +88,12 @@ async function refreshFacebookToken(currentToken: string): Promise<string> {
     where: { platform: FACEBOOK_PLATFORM },
     create: {
       platform: FACEBOOK_PLATFORM,
-      access_token,
-      expires_at: new Date(Date.now() + expires_in * 1000),
+      accessToken: access_token,
+      expiresAt: new Date(Date.now() + expires_in * 1000),
     },
     update: {
-      access_token,
-      expires_at: new Date(Date.now() + expires_in * 1000),
+      accessToken: access_token,
+      expiresAt: new Date(Date.now() + expires_in * 1000),
     },
   });
 
@@ -132,10 +106,10 @@ export async function checkTokenExpiry(): Promise<void> {
     where: { platform: FACEBOOK_PLATFORM },
   });
 
-  if (!row || !row.expires_at) return;
+  if (!row || !row.expiresAt) return;
 
   const daysLeft =
-    (row.expires_at.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
+    (row.expiresAt.getTime() - Date.now()) / (1000 * 60 * 60 * 24);
 
   if (daysLeft < 14) {
     logger.warn({

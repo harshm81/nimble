@@ -30,13 +30,12 @@ ALTER TABLE `shopify_order_line_items`
   MODIFY COLUMN `discounted_unit_price` DECIMAL(12, 4) NULL,
   MODIFY COLUMN `total_discount`        DECIMAL(12, 4) NULL;
 
--- 3. Add src_modified_at index to shopify_order_line_items
+-- 3. Add src_modified_at column + index to shopify_order_line_items
+ALTER TABLE `shopify_order_line_items`
+  ADD COLUMN `src_modified_at` DATETIME(3) NULL;
+
 ALTER TABLE `shopify_order_line_items`
   ADD INDEX `idx_shopify_order_line_items_src_modified_at` (`src_modified_at`);
-
--- 4. Add src_modified_at index to shopify_refunds
-ALTER TABLE `shopify_refunds`
-  ADD INDEX `idx_shopify_refunds_src_modified_at` (`src_modified_at`);
 
 -- 5. Fix modified_at ON UPDATE on all affected tables
 ALTER TABLE `shopify_orders`
