@@ -1,22 +1,22 @@
 export interface Cin7LineItem {
   id: number;
-  productId: number;
-  code: string;
-  name: string;
-  qty: number;
-  unitPrice: number;
-  discount: number;
-  tax: number;
-  total: number;
+  productId: number | null;
+  code: string | null;
+  name: string | null;
+  qty: number | null;
+  unitPrice: number | null;
+  discount: number | null;
+  tax: number | null;
+  total: number | null;
   comment: string | null;
-  lineItemType: string;
-  sortOrder: number;
+  lineItemType: string | null;
+  sortOrder: number | null;
   option1: string | null;
   option2: string | null;
   option3: string | null;
   styleCode: string | null;
   barcode: string | null;
-  unitCost: number;
+  unitCost: number | null;
   taxRule: string | null;
   accountCode: string | null;
   weight: number | null;
@@ -28,27 +28,27 @@ export interface Cin7LineItem {
 
 export interface Cin7SalesOrder {
   id: number;
-  reference: string;
+  reference: string | null;
   memberId: number | null;
   memberEmail: string | null;
   memberName: string | null;
-  status: string;
-  createdDate: string;
-  updatedDate: string;
+  status: string | null;
+  createdDate: string | null;
+  updatedDate: string | null;
   completedDate: string | null;
   invoiceDate: string | null;
   invoiceNumber: string | null;
   dueDate: string | null;
-  branchId: number;
+  branchId: number | null;
   priceTier: string | null;
-  taxInclusive: boolean;
-  subTotal: number;
-  tax: number;
-  total: number;
-  paid: number;
-  balance: number;
-  currencyCode: string;
-  exchangeRate: number;
+  taxInclusive: boolean | null;
+  subTotal: number | null;
+  tax: number | null;
+  total: number | null;
+  paid: number | null;
+  balance: number | null;
+  currencyCode: string | null;
+  exchangeRate: number | null;
   note: string | null;
   internalNote: string | null;
   shippingNotes: string | null;
@@ -84,8 +84,8 @@ export interface Cin7SalesOrder {
 
 export interface Cin7Contact {
   id: number;
-  memberSince: string;
-  type: string;
+  memberSince: string | null;
+  type: string | null;
   firstName: string | null;
   lastName: string | null;
   email: string | null;
@@ -103,7 +103,7 @@ export interface Cin7Contact {
   country: string | null;
   priceTier: string | null;
   accountCode: string | null;
-  isActive: boolean;
+  isActive: boolean | null;
   discount: number | null;
   creditLimit: number | null;
   currencyCode: string | null;
@@ -111,14 +111,14 @@ export interface Cin7Contact {
   taxRule: string | null;
   note: string | null;
   group: string | null;
-  createdDate: string;
-  updatedDate: string;
+  createdDate: string | null;
+  updatedDate: string | null;
 }
 
 export interface Cin7Product {
   id: number;
-  name: string;
-  code: string;
+  name: string | null;
+  code: string | null;
   barcode: string | null;
   category: string | null;
   brand: string | null;
@@ -126,11 +126,11 @@ export interface Cin7Product {
   supplierId: number | null;
   description: string | null;
   shortDescription: string | null;
-  isActive: boolean;
+  isActive: boolean | null;
   option1Name: string | null;
   option2Name: string | null;
   option3Name: string | null;
-  unitPrice: number;
+  unitPrice: number | null;
   unitPriceTier2: number | null;
   unitPriceTier3: number | null;
   unitPriceTier4: number | null;
@@ -150,22 +150,22 @@ export interface Cin7Product {
   height: number | null;
   width: number | null;
   depth: number | null;
-  type: string;
-  createdDate: string;
-  updatedDate: string;
+  type: string | null;
+  createdDate: string | null;
+  updatedDate: string | null;
 }
 
 export interface Cin7StockItem {
   id: number;
-  productId: number;
-  code: string;
-  name: string;
+  productId: number | null;
+  code: string | null;
+  name: string | null;
   barcode: string | null;
   option1: string | null;
   option2: string | null;
   option3: string | null;
   styleCode: string | null;
-  isActive: boolean;
+  isActive: boolean | null;
   costPrice: number | null;
   unitPrice: number | null;
   weight: number | null;
@@ -173,11 +173,11 @@ export interface Cin7StockItem {
   height: number | null;
   width: number | null;
   depth: number | null;
-  branchId: number;
-  available: number;
-  stockOnHand: number;
-  committed: number;
-  incoming: number;
+  branchId: number | null;
+  available: number | null;
+  stockOnHand: number | null;
+  committed: number | null;
+  incoming: number | null;
   binLocation: string | null;
   reorderPoint: number | null;
   reorderQty: number | null;
@@ -185,22 +185,22 @@ export interface Cin7StockItem {
 
 export interface Cin7PurchaseOrder {
   id: number;
-  reference: string;
+  reference: string | null;
   supplierId: number | null;
   supplierName: string | null;
   supplierEmail: string | null;
-  status: string;
-  createdDate: string;
-  updatedDate: string;
+  status: string | null;
+  createdDate: string | null;
+  updatedDate: string | null;
   completedDate: string | null;
   requiredDate: string | null;
-  branchId: number;
-  taxInclusive: boolean;
-  subTotal: number;
-  tax: number;
-  total: number;
-  currencyCode: string;
-  exchangeRate: number;
+  branchId: number | null;
+  taxInclusive: boolean | null;
+  subTotal: number | null;
+  tax: number | null;
+  total: number | null;
+  currencyCode: string | null;
+  exchangeRate: number | null;
   note: string | null;
   internalNote: string | null;
   shippingCompany: string | null;
@@ -225,21 +225,21 @@ export interface Cin7PurchaseOrder {
 
 export interface Cin7CreditNote {
   id: number;
-  reference: string;
+  reference: string | null;
   memberId: number | null;
   memberEmail: string | null;
   memberName: string | null;
-  status: string;
-  createdDate: string;
-  updatedDate: string;
+  status: string | null;
+  createdDate: string | null;
+  updatedDate: string | null;
   creditDate: string | null;
-  branchId: number;
-  taxInclusive: boolean;
-  subTotal: number;
-  tax: number;
-  total: number;
-  currencyCode: string;
-  exchangeRate: number;
+  branchId: number | null;
+  taxInclusive: boolean | null;
+  subTotal: number | null;
+  tax: number | null;
+  total: number | null;
+  currencyCode: string | null;
+  exchangeRate: number | null;
   note: string | null;
   internalNote: string | null;
   account: string | null;
@@ -248,11 +248,11 @@ export interface Cin7CreditNote {
 
 export interface Cin7StockAdjustment {
   id: number;
-  reference: string;
-  branchId: number;
-  status: string;
-  createdDate: string;
-  updatedDate: string;
+  reference: string | null;
+  branchId: number | null;
+  status: string | null;
+  createdDate: string | null;
+  updatedDate: string | null;
   completedDate: string | null;
   note: string | null;
   lineItems: Cin7LineItem[];
@@ -260,10 +260,10 @@ export interface Cin7StockAdjustment {
 
 export interface Cin7Branch {
   id: number;
-  name: string;
+  name: string | null;
   code: string | null;
-  isActive: boolean;
-  isDefault: boolean;
+  isActive: boolean | null;
+  isDefault: boolean | null;
   address1: string | null;
   address2: string | null;
   city: string | null;
@@ -273,6 +273,6 @@ export interface Cin7Branch {
   phone: string | null;
   email: string | null;
   currencyCode: string | null;
-  createdDate: string;
-  updatedDate: string;
+  createdDate: string | null;
+  updatedDate: string | null;
 }

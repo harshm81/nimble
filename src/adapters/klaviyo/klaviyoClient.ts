@@ -26,7 +26,7 @@ klaviyoClient.interceptors.response.use(
       const cfg = error.config as unknown as Record<string, unknown>;
       const retryCount = typeof cfg.__retryCount === 'number' ? cfg.__retryCount : 0;
 
-      if (retryCount >= 1) {
+      if (retryCount >= 3) {
         throw error;
       }
 

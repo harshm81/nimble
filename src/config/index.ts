@@ -24,6 +24,7 @@ const envSchema = z.object({
   GA4_PROPERTY_ID: z.string().optional(),
   GOOGLE_SERVICE_ACCOUNT_JSON: z.string().optional(),
 
+  FACEBOOK_ACCESS_TOKEN: z.string().optional(),
   FACEBOOK_APP_ID: z.string().optional(),
   FACEBOOK_APP_SECRET: z.string().optional(),
   FACEBOOK_AD_ACCOUNT_ID: z.string().optional(),

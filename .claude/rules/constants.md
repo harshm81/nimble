@@ -24,7 +24,7 @@ src/constants/
 
 ## What Does NOT Belong Here
 
-- Status strings (`'running'`, `'queued'`, `'success'`) — stay in `syncLogRepo.ts`
+- Status strings (`'running'`, `'queued'`, `'success'`) — stay in `syncLogRepo.ts` as a `SYNC_STATUS` const map with `as const` for type safety
 - HTTP status codes — stay in the adapter layer
 - Cron patterns — stay in `scheduler.ts` (schedules change independently)
 - Error messages — use structured log fields, not string constants

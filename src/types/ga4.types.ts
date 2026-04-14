@@ -35,27 +35,27 @@ export interface GA4ReportResponse {
 
 export interface GA4SessionRow {
   date: string;
-  source: string;
-  medium: string;
-  campaign: string;
-  deviceCategory: string;
-  sessions: number;
-  totalUsers: number;
-  newUsers: number;
-  pageViews: number;
-  engagementSeconds: number;
+  source: string | null;
+  medium: string | null;
+  campaign: string | null;
+  deviceCategory: string | null;
+  sessions: string | null;
+  totalUsers: string | null;
+  newUsers: string | null;
+  pageViews: string | null;
+  engagementSeconds: string | null;
 }
 
 export interface GA4EcommerceEventRow {
   date: string;
-  eventName: string;
-  source: string;
-  medium: string;
-  transactions: number;
-  revenue: number;
-  addToCarts: number;
-  checkouts: number;
-  viewItemEvents: number;
+  eventName: string | null;
+  source: string | null;
+  medium: string | null;
+  transactions: string | null;
+  revenue: string | null;
+  addToCarts: string | null;
+  checkouts: string | null;
+  viewItemEvents: string | null;
 }
 
 export interface GA4ProductDataRow {
@@ -64,10 +64,10 @@ export interface GA4ProductDataRow {
   itemName: string | null;
   itemBrand: string | null;
   itemCategory: string | null;
-  itemListViews: number;
-  itemListClicks: number;
-  itemViews: number;
-  addToCarts: number;
-  purchases: number;
-  revenue: number;
+  itemListViews: string | null;
+  itemListClicks: string | null;
+  itemViews: string | null;
+  addToCarts: string | null;
+  purchases: string | null;
+  revenue: string | null;
 }

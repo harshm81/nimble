@@ -13,9 +13,9 @@ export interface ShopifyMoney {
 
 export interface ShopifyLineItemNode {
   id: string;
-  name: string;
+  name: string | null;
   sku: string | null;
-  quantity: number;
+  quantity: number | null;
   originalUnitPriceSet: ShopifyMoney | null;
   discountedUnitPriceSet: ShopifyMoney | null;
   totalDiscountSet: ShopifyMoney | null;
@@ -23,14 +23,14 @@ export interface ShopifyLineItemNode {
 
 export interface ShopifyRefundNode {
   id: string;
-  createdAt: string;
+  createdAt: string | null;
   note: string | null;
   totalRefundedSet: ShopifyMoney | null;
 }
 
 export interface ShopifyOrderNode {
   id: string;
-  name: string;
+  name: string | null;
   email: string | null;
   displayFinancialStatus: string | null;
   displayFulfillmentStatus: string | null;
@@ -38,6 +38,7 @@ export interface ShopifyOrderNode {
   subtotalPriceSet: ShopifyMoney | null;
   totalTaxSet: ShopifyMoney | null;
   currencyCode: string | null;
+  createdAt: string | null;
   processedAt: string | null;
   updatedAt: string | null;
   lineItems: {
@@ -54,18 +55,18 @@ export interface ShopifyCustomerNode {
   firstName: string | null;
   lastName: string | null;
   phone: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | null;
+  updatedAt: string | null;
 }
 
 /* ---------------- PRODUCTS ---------------- */
 
 export interface ShopifyProductNode {
   id: string;
-  title: string;
-  status: string;
-  createdAt: string;
-  updatedAt: string;
+  title: string | null;
+  status: string | null;
+  createdAt: string | null;
+  updatedAt: string | null;
   variants: {
     nodes: ShopifyVariantNode[];
   };
@@ -75,8 +76,8 @@ export interface ShopifyProductNode {
 
 export interface ShopifyInventoryLevelNode {
   id: string;
-  available: number;
-  updatedAt: string;
+  available: number | null;
+  updatedAt: string | null;
 }
 
 /* ---------------- CART WEBHOOK ---------------- */
@@ -84,7 +85,7 @@ export interface ShopifyInventoryLevelNode {
 export interface ShopifyCartLineItem {
   variant_id: number | null;
   product_id: number | null;
-  quantity: number;
+  quantity: number | null;
   price: string | null;
 }
 
@@ -96,11 +97,11 @@ export interface ShopifyCartWebhookPayload {
     id: number;
     email: string | null;
   } | null;
-  line_items: ShopifyCartLineItem[];
+  line_items: ShopifyCartLineItem[] | null;
   total_price: string | null;
   currency: string | null;
-  created_at: string;
-  updated_at: string;
+  created_at: string | null;
+  updated_at: string | null;
 }
 
 /* ---------------- PRODUCT VARIANTS ---------------- */
@@ -113,6 +114,6 @@ export interface ShopifyVariantNode {
   compareAtPrice: string | null;
   inventoryQuantity: number | null;
   position: number | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt: string | null;
+  updatedAt: string | null;
 }

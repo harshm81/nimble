@@ -10,7 +10,7 @@ export async function fetchStockAdjustments(lastSyncedAt: Date | null): Promise<
   const results: Cin7StockAdjustment[] = [];
 
   const where = lastSyncedAt
-    ? `createdDate >= '${lastSyncedAt.toISOString()}'`
+    ? `modifiedDate >= '${lastSyncedAt.toISOString()}'`
     : undefined;
 
   while (true) {
@@ -19,7 +19,7 @@ export async function fetchStockAdjustments(lastSyncedAt: Date | null): Promise<
         page,
         rows,
         ...(where !== undefined && { where }),
-        order: 'createdDate ASC',
+        order: 'modifiedDate ASC',
       },
     });
 

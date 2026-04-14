@@ -5,6 +5,7 @@ import { SHOPIFY_QUEUE } from '../constants/shopify';
 import { GA4_QUEUE } from '../constants/ga4';
 import { FACEBOOK_QUEUE } from '../constants/facebook';
 import { KLAVIYO_QUEUE } from '../constants/klaviyo';
+import { MAINTENANCE_QUEUE } from '../constants/maintenance';
 
 const defaultJobOptions = {
   attempts: 3,
@@ -16,8 +17,9 @@ const defaultJobOptions = {
   removeOnFail: 500,
 };
 
-export const cin7Queue     = new Queue(CIN7_QUEUE,     { connection, defaultJobOptions });
-export const shopifyQueue  = new Queue(SHOPIFY_QUEUE,  { connection, defaultJobOptions });
-export const ga4Queue      = new Queue(GA4_QUEUE,      { connection, defaultJobOptions });
-export const facebookQueue = new Queue(FACEBOOK_QUEUE, { connection, defaultJobOptions });
-export const klaviyoQueue  = new Queue(KLAVIYO_QUEUE,  { connection, defaultJobOptions });
+export const cin7Queue        = new Queue(CIN7_QUEUE,        { connection, defaultJobOptions });
+export const shopifyQueue     = new Queue(SHOPIFY_QUEUE,     { connection, defaultJobOptions });
+export const ga4Queue         = new Queue(GA4_QUEUE,         { connection, defaultJobOptions });
+export const facebookQueue    = new Queue(FACEBOOK_QUEUE,    { connection, defaultJobOptions });
+export const klaviyoQueue     = new Queue(KLAVIYO_QUEUE,     { connection, defaultJobOptions });
+export const maintenanceQueue = new Queue(MAINTENANCE_QUEUE, { connection, defaultJobOptions });

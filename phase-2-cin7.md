@@ -266,7 +266,18 @@ export function transformOrder(raw: Cin7SalesOrder, syncedAt: Date): OrderInput 
 
 **Rule:** Never use inferred return types on transformers. The explicit `: *Input` type is the contract.
 
-Line items are **not** transformed by a separate function — they are mapped inline in the worker from `raw.lineItems` directly into `OrderLineItemInput` shape (see Worker section below).
+Line items are transformed by a **dedicated function** (`transformOrderLineItems`) — never mapped inline in the worker. The dedicated function has an explicit return type so TypeScript catches field mismatches at compile time.
+
+```ts
+export function transformOrderLineItems(raw: Cin7SalesOrder, syncedAt: Date): OrderLineItemInput[] {
+  return raw.lineItems.map((li): OrderLineItemInput => ({
+    orderId:         raw.id,
+    cin7LineItemId:  li.id,
+    // ... all fields explicitly typed
+    syncedAt,
+  }));
+}
+```
 
 ---
 
@@ -308,34 +319,29 @@ Key points:
 - `default` throws — unknown job names fail loudly and are retried by BullMQ
 
 ```ts
+// ALL local variables must be camelCase — TypeScript convention, enforced by project rules.
+// Never use snake_case for local variables (started_at, sync_log, etc.) — use startedAt, syncLog.
 export const cin7Worker = new Worker(
   CIN7_QUEUE,
   async (job) => {
-    const started_at = Date.now();
-    const queued_id = await logQueued(CIN7_PLATFORM, job.name);
-    const sync_log  = await logRunning(queued_id);
+    const startedAt = Date.now();
+    logger.info({ platform: CIN7_PLATFORM, job: job.name }, 'job started');
+    const queuedId = await logQueued(CIN7_PLATFORM, job.name);
+    const syncLog  = await logRunning(queuedId);
 
     try {
-      const last_synced_at = await getLastSyncedAt(CIN7_PLATFORM, job.name);
-      const synced_at = new Date();
+      const lastSyncedAt = await getLastSyncedAt(CIN7_PLATFORM, job.name);
+      const syncedAt = new Date();
 
       switch (job.name) {
         case CIN7_JOBS.ORDERS: {
-          const raw = await fetchOrders(last_synced_at);
-          const orders = raw.map((r) => transformOrder(r, synced_at));
-          const line_items = raw.flatMap((r) =>
-            r.lineItems.map((li) => ({
-              orderId:       r.id,
-              cin7LineItemId: li.id,
-              productId:     li.productId,
-              // ... all OrderLineItemInput fields
-              syncedAt:      synced_at,
-            }))
-          );
-          const records_saved = await upsertOrders(orders);
-          await upsertOrderLineItems(line_items);
-          await setLastSyncedAt(CIN7_PLATFORM, job.name, synced_at);
-          await logSuccess(sync_log.id, { recordsFetched: raw.length, recordsSaved: records_saved, recordsSkipped: 0, durationMs: Date.now() - started_at });
+          const raw       = await fetchOrders(lastSyncedAt);
+          const orders    = raw.map((r) => transformOrder(r, syncedAt));
+          const lineItems = raw.flatMap((r) => transformOrderLineItems(r, syncedAt));
+          const recordsSaved = await upsertOrders(orders);
+          await upsertOrderLineItems(lineItems);
+          await setLastSyncedAt(CIN7_PLATFORM, job.name, syncedAt);
+          await logSuccess(syncLog.id, { recordsFetched: raw.length, recordsSaved, recordsSkipped: 0, durationMs: Date.now() - startedAt });
           break;
         }
         // ... other cases follow same pattern
@@ -343,9 +349,9 @@ export const cin7Worker = new Worker(
           throw new Error(`cin7Worker: unknown job name: ${job.name}`);
       }
     } catch (error) {
-      await logFailure(sync_log.id, {
+      await logFailure(syncLog.id, {
         errorMessage: error instanceof Error ? error.message : String(error),
-        durationMs: Date.now() - started_at,
+        durationMs: Date.now() - startedAt,
       });
       throw error;
     }
@@ -382,6 +388,37 @@ All endpoints use offset pagination (`page` + `rows`):
 | `page` | starts at `1`, 1-indexed |
 | `rows` | `250` (max page size) |
 | Terminal condition | `data.length < rows` |
+
+---
+
+## Pre-Ship Checklist
+
+### Types
+- [ ] Every nullable field uses `Type | null` — no `Type | undefined`
+- [ ] All dates are `string` in API types, `Date` after transformer
+
+### Adapters
+- [ ] `sleep(350)` between pages — imported from `../../utils/sleep`, never inlined
+- [ ] Page size `250` — no endpoint uses a different value
+- [ ] Delta filter uses correct field name per endpoint (`modifiedDate` vs `createdDate` for adjustments)
+
+### Transformers
+- [ ] Every transformer has explicit `: *Input` return type — never inferred
+- [ ] Line items use `transformOrderLineItems` (dedicated function) — never inline in worker
+- [ ] All `?? null` guards on nullable fields
+
+### Worker
+- [ ] All local variables `camelCase` — never `snake_case` (startedAt not started_at)
+- [ ] `logger.info` before `logQueued` at job start
+- [ ] `logQueued` + `logRunning` before `try` block
+- [ ] `setLastSyncedAt` before `logSuccess` in every case
+- [ ] `default` case throws
+
+### Scheduler + Wiring
+- [ ] `tsc --noEmit` passes with zero errors
+- [ ] Every scheduled job has a `case` in the worker
+- [ ] Worker imported in `index.ts`
+- [ ] No hardcoded job/queue/platform strings
 
 ---
 

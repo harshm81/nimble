@@ -5,21 +5,21 @@ import { getAuthHeaders } from '../../auth/tokenManager';
 import { logger } from '../../utils/logger';
 import { sleep } from '../../utils/sleep';
 
-function parseCallLimit(header: string): { used: number; limit: number } {
-  const [used, limit] = header.split('/').map(Number);
-  return { used, limit };
-}
+// Shopify GraphQL uses a cost-based leaky bucket (100 points/s on standard plans).
+// The REST header x-shopify-shop-api-call-limit is NOT sent on GraphQL responses.
+// Instead, throttle status is returned in the response body under extensions.cost.throttleStatus.
+async function checkAndRespectRateLimit(
+  body: { extensions?: { cost?: { throttleStatus?: { currentlyAvailable: number; maximumAvailable: number } } } },
+): Promise<void> {
+  const throttle = body.extensions?.cost?.throttleStatus;
+  if (!throttle) return;
 
-async function checkAndRespectRateLimit(headers: Record<string, string>): Promise<void> {
-  const header = headers['x-shopify-shop-api-call-limit'];
-  if (!header) return;
-
-  const { used, limit } = parseCallLimit(header);
-  const remaining = limit - used;
-
-  if (remaining < 200) {
-    logger.warn({ platform: SHOPIFY_PLATFORM, remaining }, 'rate limit low, sleeping');
-    await sleep(10_000);
+  const { currentlyAvailable, maximumAvailable } = throttle;
+  // Sleep when bucket is below 20% to avoid hitting the limit mid-pagination
+  if (currentlyAvailable < maximumAvailable * 0.2) {
+    const waitMs = Math.ceil(((maximumAvailable * 0.5 - currentlyAvailable) / 100) * 1000);
+    logger.warn({ platform: SHOPIFY_PLATFORM, currentlyAvailable, maximumAvailable, waitMs }, 'GraphQL bucket low — throttling');
+    await sleep(waitMs);
   }
 }
 
@@ -46,11 +46,23 @@ export async function createShopifyClient() {
       logger.info({ platform: SHOPIFY_PLATFORM, status: res.status, duration });
       return res;
     },
-    (error) => {
+    async (error) => {
       const cfg = error.config as
-        | (InternalAxiosRequestConfig & { metadata: { startTime: number } })
+        | (InternalAxiosRequestConfig & { metadata: { startTime: number }; __retryCount?: number })
         | undefined;
       const duration = cfg?.metadata?.startTime ? Date.now() - cfg.metadata.startTime : undefined;
+
+      if (error.response?.status === 429 && cfg) {
+        const retryCount = cfg.__retryCount ?? 0;
+        if (retryCount < 3) {
+          const retryAfter = parseInt(error.response.headers?.['retry-after'] ?? '10', 10);
+          logger.warn({ platform: SHOPIFY_PLATFORM, retryAfter, retryCount: retryCount + 1 }, 'Shopify 429 — retrying');
+          cfg.__retryCount = retryCount + 1;
+          await sleep(retryAfter * 1000);
+          return client.request(cfg);
+        }
+      }
+
       if (error.response?.status === 401) {
         logger.error({ platform: SHOPIFY_PLATFORM, status: 401, duration }, 'shopify 401 — token may need refresh');
       } else {
@@ -73,7 +85,7 @@ export async function executeQuery<T>(
 
   const response = await client.post('', { query, variables });
 
-  await checkAndRespectRateLimit(response.headers as Record<string, string>);
+  await checkAndRespectRateLimit(response.data);
 
   return {
     data: response.data.data as T,
@@ -88,7 +100,7 @@ export async function executeQueryWithClient<T>(
 ): Promise<{ data: T; headers: Record<string, string> }> {
   const response = await client.post('', { query, variables });
 
-  await checkAndRespectRateLimit(response.headers as Record<string, string>);
+  await checkAndRespectRateLimit(response.data);
 
   return {
     data: response.data.data as T,

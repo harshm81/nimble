@@ -13,6 +13,7 @@ import {
   ga4Queue,
   facebookQueue,
   klaviyoQueue,
+  maintenanceQueue,
 } from '../queue/queues';
 import { shopifyCartWebhookRouter } from './webhooks/shopifyCartWebhook';
 
@@ -116,6 +117,7 @@ createBullBoard({
     new BullMQAdapter(ga4Queue),
     new BullMQAdapter(facebookQueue),
     new BullMQAdapter(klaviyoQueue),
+    new BullMQAdapter(maintenanceQueue),
   ],
   serverAdapter,
 });

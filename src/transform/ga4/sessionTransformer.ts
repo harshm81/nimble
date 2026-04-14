@@ -9,21 +9,22 @@ export function transformSession(
   return {
     propertyId,
     reportDate:        parseGa4Date(raw.date),
-    source:            raw.source,
-    medium:            raw.medium,
-    campaign:          raw.campaign,
-    deviceCategory:    raw.deviceCategory,
-    sessions:          raw.sessions,
-    totalUsers:        raw.totalUsers,
-    newUsers:          raw.newUsers,
-    pageViews:         raw.pageViews,
-    engagementSeconds: raw.engagementSeconds,
+    source:            raw.source ?? '',
+    medium:            raw.medium ?? '',
+    campaign:          raw.campaign ?? '',
+    deviceCategory:    raw.deviceCategory ?? '',
+    sessions:          raw.sessions ? parseInt(raw.sessions, 10) : 0,
+    totalUsers:        raw.totalUsers ? parseInt(raw.totalUsers, 10) : 0,
+    newUsers:          raw.newUsers ? parseInt(raw.newUsers, 10) : 0,
+    pageViews:         raw.pageViews ? parseInt(raw.pageViews, 10) : 0,
+    engagementSeconds: raw.engagementSeconds ? parseInt(raw.engagementSeconds, 10) : 0,
     rawData:           raw,
     syncedAt,
   };
 }
 
-function parseGa4Date(yyyymmdd: string): Date {
+function parseGa4Date(yyyymmdd: string | null | undefined): Date {
+  if (!yyyymmdd) throw new Error('GA4 row missing required date field');
   const y = yyyymmdd.slice(0, 4);
   const m = yyyymmdd.slice(4, 6);
   const d = yyyymmdd.slice(6, 8);

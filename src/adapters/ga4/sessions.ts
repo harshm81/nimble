@@ -1,11 +1,11 @@
 import { config } from '../../config';
 import { GA4_PLATFORM } from '../../constants/ga4';
 import { logger } from '../../utils/logger';
-import { runReport, parseRows } from './ga4Client';
+import { runReportPaginated, parseRows } from './ga4Client';
 import { GA4SessionRow } from '../../types/ga4.types';
 
 export async function fetchSessions(date: string): Promise<GA4SessionRow[]> {
-  const response = await runReport(config.GA4_PROPERTY_ID ?? '', {
+  const response = await runReportPaginated(config.GA4_PROPERTY_ID ?? '', {
     dateRanges: [{ startDate: date, endDate: date }],
     dimensions: [
       { name: 'date' },
@@ -28,14 +28,14 @@ export async function fetchSessions(date: string): Promise<GA4SessionRow[]> {
 
   return parseRows(response, (row) => ({
     date:              row['date'],
-    source:            row['sessionSource'],
-    medium:            row['sessionMedium'],
-    campaign:          row['sessionCampaignName'],
-    deviceCategory:    row['deviceCategory'],
-    sessions:          parseInt(row['sessions'], 10),
-    totalUsers:        parseInt(row['totalUsers'], 10),
-    newUsers:          parseInt(row['newUsers'], 10),
-    pageViews:         parseInt(row['screenPageViews'], 10),
-    engagementSeconds: parseInt(row['userEngagementDuration'], 10),
+    source:            row['sessionSource'] || null,
+    medium:            row['sessionMedium'] || null,
+    campaign:          row['sessionCampaignName'] || null,
+    deviceCategory:    row['deviceCategory'] || null,
+    sessions:          row['sessions'] || null,
+    totalUsers:        row['totalUsers'] || null,
+    newUsers:          row['newUsers'] || null,
+    pageViews:         row['screenPageViews'] || null,
+    engagementSeconds: row['userEngagementDuration'] || null,
   }));
 }

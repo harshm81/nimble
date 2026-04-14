@@ -72,7 +72,11 @@ export const shopifyWorker = new Worker(
         case SHOPIFY_JOBS.PRODUCTS: {
           const raw = await fetchProducts(lastSyncedAt);
           const rows = raw.map((r) => transformProduct(r, syncedAt));
+          // Upsert variants in the same job — products and variants share the same fetch,
+          // so no second API call is needed. PRODUCT_VARIANTS job is kept for manual re-runs.
+          const variants = raw.flatMap((r) => transformProductVariants(r, syncedAt));
           const recordsSaved = await upsertProducts(rows);
+          await upsertProductVariants(variants);
           await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, syncedAt);
           await logSuccess(syncLog.id, {
             recordsFetched: raw.length,
@@ -80,12 +84,9 @@ export const shopifyWorker = new Worker(
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
           });
-          // Inventory and variants are not cron-scheduled — enqueue after products complete
+          // Inventory is not cron-scheduled — enqueue after products complete
           await shopifyQueue.add(SHOPIFY_JOBS.INVENTORY, {}, {
             jobId: `${SHOPIFY_JOBS.INVENTORY}:${Date.now()}`,
-          });
-          await shopifyQueue.add(SHOPIFY_JOBS.PRODUCT_VARIANTS, {}, {
-            jobId: `${SHOPIFY_JOBS.PRODUCT_VARIANTS}:${Date.now()}`,
           });
           break;
         }
@@ -105,6 +106,9 @@ export const shopifyWorker = new Worker(
         }
 
         case SHOPIFY_JOBS.PRODUCT_VARIANTS: {
+          // Standalone re-run path — fetches products again to extract variants.
+          // During normal cron sync this case is not reached; variants are upserted
+          // inside the PRODUCTS case above to avoid a redundant API call.
           const raw = await fetchProducts(lastSyncedAt);
           const variants = raw.flatMap((r) => transformProductVariants(r, syncedAt));
           const recordsSaved = await upsertProductVariants(variants);

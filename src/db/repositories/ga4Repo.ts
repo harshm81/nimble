@@ -137,6 +137,8 @@ export async function upsertProductData(rows: ProductDataInput[]): Promise<numbe
        raw_data, synced_at)
       VALUES ${Prisma.join(values)}
       ON DUPLICATE KEY UPDATE
+        item_brand = VALUES(item_brand),
+        item_category = VALUES(item_category),
         item_list_views = VALUES(item_list_views),
         item_list_clicks = VALUES(item_list_clicks),
         item_views = VALUES(item_views),

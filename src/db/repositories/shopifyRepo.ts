@@ -17,6 +17,7 @@ export interface OrderInput {
   totalTax: number | null;
   currency: string | null;
   orderDate: Date | null;
+  srcCreatedAt: Date | null;
   srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
@@ -38,7 +39,7 @@ export interface OrderLineItemInput {
 export interface RefundInput {
   shopifyOrderId: string;
   shopifyRefundId: string;
-  refundedAt: Date;
+  refundedAt: Date | null;
   note: string | null;
   totalRefunded: number | null;
   syncedAt: Date;
@@ -50,8 +51,8 @@ export interface CustomerInput {
   firstName: string | null;
   lastName: string | null;
   phone: string | null;
-  srcCreatedAt: Date;
-  srcModifiedAt: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -60,8 +61,8 @@ export interface ProductInput {
   shopifyId: string;
   title: string;
   status: string;
-  srcCreatedAt: Date;
-  srcModifiedAt: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -69,7 +70,7 @@ export interface ProductInput {
 export interface InventoryInput {
   shopifyId: string;
   available: number;
-  srcModifiedAt: Date;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -82,8 +83,8 @@ export interface CartEventInput {
   lineItemsCount: number | null;
   totalPrice: number | null;
   currency: string | null;
-  srcCreatedAt: Date;
-  srcModifiedAt: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -97,8 +98,8 @@ export interface ProductVariantInput {
   compareAtPrice: number | null;
   inventoryQuantity: number | null;
   position: number | null;
-  srcCreatedAt: Date;
-  srcModifiedAt: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -113,11 +114,11 @@ export async function upsertOrders(rows: OrderInput[]): Promise<number> {
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.shopifyId}, ${r.orderName}, ${r.customerEmail}, ${r.financialStatus}, ${r.fulfillmentStatus}, ${r.totalPrice}, ${r.subtotalPrice}, ${r.totalTax}, ${r.currency}, ${r.orderDate}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.shopifyId}, ${r.orderName}, ${r.customerEmail}, ${r.financialStatus}, ${r.fulfillmentStatus}, ${r.totalPrice}, ${r.subtotalPrice}, ${r.totalTax}, ${r.currency}, ${r.orderDate}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO shopify_orders (shopify_id, order_name, customer_email, financial_status, fulfillment_status, total_price, subtotal_price, total_tax, currency, order_date, src_modified_at, raw_data, synced_at)
+      INSERT INTO shopify_orders (shopify_id, order_name, customer_email, financial_status, fulfillment_status, total_price, subtotal_price, total_tax, currency, order_date, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         order_name = VALUES(order_name),
@@ -129,6 +130,7 @@ export async function upsertOrders(rows: OrderInput[]): Promise<number> {
         total_tax = VALUES(total_tax),
         currency = VALUES(currency),
         order_date = VALUES(order_date),
+        src_created_at = VALUES(src_created_at),
         src_modified_at = VALUES(src_modified_at),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)

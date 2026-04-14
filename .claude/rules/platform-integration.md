@@ -160,6 +160,7 @@ do {
 - Pagination: cursor-based (`pageInfo.hasNextPage` + `pageInfo.endCursor`) for GraphQL platforms; page-number for REST
 - Rate limiting: use header-based throttling (`checkAndRespectRateLimit`) where available — do NOT add a fixed `sleep(350)` on top of it (double-throttling wastes time)
 - For platforms without header-based rate limiting (Cin7 REST): use `await sleep(350)` between pages
+- Exception: Facebook async report polling uses `sleep(5000)` — this is a job-status poll, not rate limiting
 - Import `sleep` from `../../utils/sleep` — never inline
 
 ---
@@ -212,6 +213,34 @@ Add job schedules to `src/queue/scheduler.ts` using `JOBS.*` constants.
 Add queue to Bull Board in `src/server/app.ts`.
 
 **Never add a scheduler entry without a corresponding worker import in `index.ts`.** Jobs that are scheduled but have no worker will accumulate in the failed queue after max retries.
+
+---
+
+## Error Handling & Idempotency
+
+- All upsert functions use `ON DUPLICATE KEY UPDATE` — this makes retries safe by default
+- BullMQ retry config is centralised in `queues.ts` — do not override per-job
+- On partial fetch failure (e.g., page 7 of 10 fails): let the job fail entirely — BullMQ retries from scratch, and `ON DUPLICATE KEY UPDATE` deduplicates already-inserted rows
+- Never catch errors silently in adapters — always re-throw so the worker can log and BullMQ can retry
+- Each chunk executes as an independent statement — no wrapping transaction. This is intentional: if chunk 3/5 fails, chunks 1-2 persist, and the retry re-upserts all 5. `ON DUPLICATE KEY UPDATE` makes this safe — no duplicates, no lost updates
+
+---
+
+## Incremental Sync Cursor (`lastSyncedAt`)
+
+- `lastSyncedAt` stores the latest `srcModifiedAt` from the most recent successful sync
+- On first sync (`lastSyncedAt === null`): fetch ALL records (full historical sync)
+- Adapters must filter by `modifiedAfter > lastSyncedAt` (or platform equivalent)
+- After successful upsert: `setLastSyncedAt(platform, jobType, latestSrcModifiedAt)`
+- Always use the source platform's timestamp, never `new Date()` — avoids clock drift between your server and the platform
+
+---
+
+## `syncedAt` Consistency
+
+- Generate `syncedAt = new Date()` **once** at the start of the worker job
+- Pass the same value to all `transform*` and `upsert*` calls within that job
+- This ensures `setLastSyncedAt` and all record timestamps are consistent within a single run
 
 ---
 

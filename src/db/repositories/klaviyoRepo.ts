@@ -106,8 +106,7 @@ export async function upsertCampaigns(rows: CampaignInput[]): Promise<number> {
         src_created_at = VALUES(src_created_at),
         src_modified_at = VALUES(src_modified_at),
         raw_data       = VALUES(raw_data),
-        synced_at      = VALUES(synced_at),
-        modified_at    = NOW()
+        synced_at      = VALUES(synced_at)
     `;
     total += c.length;
   }
@@ -142,8 +141,7 @@ export async function upsertCampaignStats(rows: CampaignStatInput[]): Promise<nu
         conversion_value      = VALUES(conversion_value),
         revenue_per_recipient = VALUES(revenue_per_recipient),
         raw_data              = VALUES(raw_data),
-        synced_at             = VALUES(synced_at),
-        modified_at           = NOW()
+        synced_at             = VALUES(synced_at)
     `;
     total += c.length;
   }
@@ -180,8 +178,7 @@ export async function upsertProfiles(rows: ProfileInput[]): Promise<number> {
         src_created_at  = VALUES(src_created_at),
         src_modified_at = VALUES(src_modified_at),
         raw_data        = VALUES(raw_data),
-        synced_at       = VALUES(synced_at),
-        modified_at     = NOW()
+        synced_at       = VALUES(synced_at)
     `;
     total += c.length;
   }
@@ -209,8 +206,7 @@ export async function upsertEvents(rows: EventInput[]): Promise<number> {
         value       = VALUES(value),
         event_date  = VALUES(event_date),
         raw_data    = VALUES(raw_data),
-        synced_at   = VALUES(synced_at),
-        modified_at = NOW()
+        synced_at   = VALUES(synced_at)
     `;
     total += c.length;
   }
@@ -238,8 +234,7 @@ export async function upsertFlows(rows: FlowInput[]): Promise<number> {
         src_created_at  = VALUES(src_created_at),
         src_modified_at = VALUES(src_modified_at),
         raw_data        = VALUES(raw_data),
-        synced_at       = VALUES(synced_at),
-        modified_at     = NOW()
+        synced_at       = VALUES(synced_at)
     `;
     total += c.length;
   }

@@ -11,20 +11,21 @@ export function transformProductData(
     reportDate:     parseGa4Date(raw.date),
     itemId:         raw.itemId ?? '(not set)',
     itemName:       raw.itemName ?? '(not set)',
-    itemBrand:      raw.itemBrand,
-    itemCategory:   raw.itemCategory,
-    itemListViews:  raw.itemListViews,
-    itemListClicks: raw.itemListClicks,
-    itemViews:      raw.itemViews,
-    addToCarts:     raw.addToCarts,
-    purchases:      raw.purchases,
-    revenue:        raw.revenue,
+    itemBrand:      raw.itemBrand ?? null,
+    itemCategory:   raw.itemCategory ?? null,
+    itemListViews:  raw.itemListViews ? parseInt(raw.itemListViews, 10) : 0,
+    itemListClicks: raw.itemListClicks ? parseInt(raw.itemListClicks, 10) : 0,
+    itemViews:      raw.itemViews ? parseInt(raw.itemViews, 10) : 0,
+    addToCarts:     raw.addToCarts ? parseInt(raw.addToCarts, 10) : 0,
+    purchases:      raw.purchases ? parseInt(raw.purchases, 10) : 0,
+    revenue:        raw.revenue ? parseFloat(raw.revenue) : 0,
     rawData:        raw,
     syncedAt,
   };
 }
 
-function parseGa4Date(yyyymmdd: string): Date {
+function parseGa4Date(yyyymmdd: string | null | undefined): Date {
+  if (!yyyymmdd) throw new Error('GA4 row missing required date field');
   const y = yyyymmdd.slice(0, 4);
   const m = yyyymmdd.slice(4, 6);
   const d = yyyymmdd.slice(6, 8);

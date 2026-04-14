@@ -15,8 +15,8 @@ export interface OrderInput {
   paymentTerms: string | null;
   branchId: number;
   currency: string;
-  orderDate: Date;
-  modifiedDate: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -73,9 +73,9 @@ export interface ContactInput {
   taxRule: string | null;
   note: string | null;
   group: string | null;
-  memberSince: Date;
-  createdDate: Date;
-  updatedDate: Date;
+  memberSince: Date | null;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -107,8 +107,8 @@ export interface ProductInput {
   height: number | null;
   width: number | null;
   depth: number | null;
-  createdDate: Date;
-  updatedDate: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -161,8 +161,8 @@ export interface PurchaseOrderInput {
   account: string | null;
   requiredDate: Date | null;
   completedDate: Date | null;
-  createdDate: Date;
-  updatedDate: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -185,8 +185,8 @@ export interface CreditNoteInput {
   internalNote: string | null;
   account: string | null;
   creditDate: Date | null;
-  createdDate: Date;
-  updatedDate: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -198,8 +198,8 @@ export interface StockAdjustmentInput {
   status: string;
   note: string | null;
   completedDate: Date | null;
-  createdDate: Date;
-  updatedDate: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -294,8 +294,8 @@ export interface BranchInput {
   phone: string | null;
   email: string | null;
   currencyCode: string | null;
-  createdDate: Date;
-  updatedDate: Date;
+  srcCreatedAt: Date | null;
+  srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -306,11 +306,11 @@ export async function upsertOrders(rows: OrderInput[]): Promise<number> {
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.orderNumber}, ${r.customerEmail}, ${r.cin7MemberId}, ${r.status}, ${r.totalAmount}, ${r.taxTotal}, ${r.lineItemTotal}, ${r.shippingTotal}, ${r.paymentTerms}, ${r.branchId}, ${r.currency}, ${r.orderDate}, ${r.modifiedDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.orderNumber}, ${r.customerEmail}, ${r.cin7MemberId}, ${r.status}, ${r.totalAmount}, ${r.taxTotal}, ${r.lineItemTotal}, ${r.shippingTotal}, ${r.paymentTerms}, ${r.branchId}, ${r.currency}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_orders (cin7_id, order_number, customer_email, cin7_member_id, status, total_amount, tax_total, line_item_total, shipping_total, payment_terms, branch_id, currency, order_date, modified_date, raw_data, synced_at)
+      INSERT INTO cin7_orders (cin7_id, order_number, customer_email, cin7_member_id, status, total_amount, tax_total, line_item_total, shipping_total, payment_terms, branch_id, currency, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         order_number = VALUES(order_number),
@@ -324,8 +324,8 @@ export async function upsertOrders(rows: OrderInput[]): Promise<number> {
         payment_terms = VALUES(payment_terms),
         branch_id = VALUES(branch_id),
         currency = VALUES(currency),
-        order_date = VALUES(order_date),
-        modified_date = VALUES(modified_date),
+        src_created_at = VALUES(src_created_at),
+        src_modified_at = VALUES(src_modified_at),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `;
@@ -379,11 +379,11 @@ export async function upsertContacts(rows: ContactInput[]): Promise<number> {
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.type}, ${r.firstName}, ${r.lastName}, ${r.email}, ${r.phone}, ${r.mobile}, ${r.fax}, ${r.company}, ${r.website}, ${r.address1}, ${r.address2}, ${r.city}, ${r.state}, ${r.postCode}, ${r.country}, ${r.isActive}, ${r.accountCode}, ${r.priceTier}, ${r.discount}, ${r.creditLimit}, ${r.currencyCode}, ${r.taxNumber}, ${r.taxRule}, ${r.note}, ${r.group}, ${r.memberSince}, ${r.createdDate}, ${r.updatedDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.type}, ${r.firstName}, ${r.lastName}, ${r.email}, ${r.phone}, ${r.mobile}, ${r.fax}, ${r.company}, ${r.website}, ${r.address1}, ${r.address2}, ${r.city}, ${r.state}, ${r.postCode}, ${r.country}, ${r.isActive}, ${r.accountCode}, ${r.priceTier}, ${r.discount}, ${r.creditLimit}, ${r.currencyCode}, ${r.taxNumber}, ${r.taxRule}, ${r.note}, ${r.group}, ${r.memberSince}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_contacts (cin7_id, type, first_name, last_name, email, phone, mobile, fax, company, website, address1, address2, city, state, post_code, country, is_active, account_code, price_tier, discount, credit_limit, currency_code, tax_number, tax_rule, note, \`group\`, member_since, created_date, updated_date, raw_data, synced_at)
+      INSERT INTO cin7_contacts (cin7_id, type, first_name, last_name, email, phone, mobile, fax, company, website, address1, address2, city, state, post_code, country, is_active, account_code, price_tier, discount, credit_limit, currency_code, tax_number, tax_rule, note, \`group\`, member_since, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         type = VALUES(type),
@@ -412,8 +412,8 @@ export async function upsertContacts(rows: ContactInput[]): Promise<number> {
         note = VALUES(note),
         \`group\` = VALUES(\`group\`),
         member_since = VALUES(member_since),
-        created_date = VALUES(created_date),
-        updated_date = VALUES(updated_date),
+        src_created_at = VALUES(src_created_at),
+        src_modified_at = VALUES(src_modified_at),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `;
@@ -428,11 +428,11 @@ export async function upsertProducts(rows: ProductInput[]): Promise<number> {
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.name}, ${r.code}, ${r.barcode}, ${r.category}, ${r.brand}, ${r.supplier}, ${r.supplierId}, ${r.description}, ${r.shortDescription}, ${r.isActive}, ${r.type}, ${r.option1Name}, ${r.option2Name}, ${r.option3Name}, ${r.unitPrice}, ${r.costPrice}, ${r.taxRule}, ${r.accountCode}, ${r.purchaseTaxRule}, ${r.purchaseAccountCode}, ${r.weight}, ${r.cbm}, ${r.height}, ${r.width}, ${r.depth}, ${r.createdDate}, ${r.updatedDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.name}, ${r.code}, ${r.barcode}, ${r.category}, ${r.brand}, ${r.supplier}, ${r.supplierId}, ${r.description}, ${r.shortDescription}, ${r.isActive}, ${r.type}, ${r.option1Name}, ${r.option2Name}, ${r.option3Name}, ${r.unitPrice}, ${r.costPrice}, ${r.taxRule}, ${r.accountCode}, ${r.purchaseTaxRule}, ${r.purchaseAccountCode}, ${r.weight}, ${r.cbm}, ${r.height}, ${r.width}, ${r.depth}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_products (cin7_id, name, code, barcode, category, brand, supplier, supplier_id, description, short_description, is_active, type, option1_name, option2_name, option3_name, unit_price, cost_price, tax_rule, account_code, purchase_tax_rule, purchase_account_code, weight, cbm, height, width, depth, created_date, updated_date, raw_data, synced_at)
+      INSERT INTO cin7_products (cin7_id, name, code, barcode, category, brand, supplier, supplier_id, description, short_description, is_active, type, option1_name, option2_name, option3_name, unit_price, cost_price, tax_rule, account_code, purchase_tax_rule, purchase_account_code, weight, cbm, height, width, depth, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         name = VALUES(name),
@@ -460,8 +460,8 @@ export async function upsertProducts(rows: ProductInput[]): Promise<number> {
         height = VALUES(height),
         width = VALUES(width),
         depth = VALUES(depth),
-        created_date = VALUES(created_date),
-        updated_date = VALUES(updated_date),
+        src_created_at = VALUES(src_created_at),
+        src_modified_at = VALUES(src_modified_at),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `;
@@ -516,11 +516,11 @@ export async function upsertPurchaseOrders(rows: PurchaseOrderInput[]): Promise<
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.reference}, ${r.supplierId}, ${r.supplierName}, ${r.supplierEmail}, ${r.status}, ${r.branchId}, ${r.taxInclusive}, ${r.subTotal}, ${r.tax}, ${r.total}, ${r.currencyCode}, ${r.exchangeRate}, ${r.note}, ${r.internalNote}, ${r.shippingCompany}, ${r.shippingMethod}, ${r.shippingCost}, ${r.shippingTax}, ${r.account}, ${r.requiredDate}, ${r.completedDate}, ${r.createdDate}, ${r.updatedDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.reference}, ${r.supplierId}, ${r.supplierName}, ${r.supplierEmail}, ${r.status}, ${r.branchId}, ${r.taxInclusive}, ${r.subTotal}, ${r.tax}, ${r.total}, ${r.currencyCode}, ${r.exchangeRate}, ${r.note}, ${r.internalNote}, ${r.shippingCompany}, ${r.shippingMethod}, ${r.shippingCost}, ${r.shippingTax}, ${r.account}, ${r.requiredDate}, ${r.completedDate}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_purchase_orders (cin7_id, reference, supplier_id, supplier_name, supplier_email, status, branch_id, tax_inclusive, sub_total, tax, total, currency_code, exchange_rate, note, internal_note, shipping_company, shipping_method, shipping_cost, shipping_tax, account, required_date, completed_date, created_date, updated_date, raw_data, synced_at)
+      INSERT INTO cin7_purchase_orders (cin7_id, reference, supplier_id, supplier_name, supplier_email, status, branch_id, tax_inclusive, sub_total, tax, total, currency_code, exchange_rate, note, internal_note, shipping_company, shipping_method, shipping_cost, shipping_tax, account, required_date, completed_date, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         reference = VALUES(reference),
@@ -544,8 +544,8 @@ export async function upsertPurchaseOrders(rows: PurchaseOrderInput[]): Promise<
         account = VALUES(account),
         required_date = VALUES(required_date),
         completed_date = VALUES(completed_date),
-        created_date = VALUES(created_date),
-        updated_date = VALUES(updated_date),
+        src_created_at = VALUES(src_created_at),
+        src_modified_at = VALUES(src_modified_at),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `;
@@ -560,11 +560,11 @@ export async function upsertCreditNotes(rows: CreditNoteInput[]): Promise<number
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.reference}, ${r.memberId}, ${r.memberEmail}, ${r.memberName}, ${r.status}, ${r.branchId}, ${r.taxInclusive}, ${r.subTotal}, ${r.tax}, ${r.total}, ${r.currencyCode}, ${r.exchangeRate}, ${r.note}, ${r.internalNote}, ${r.account}, ${r.creditDate}, ${r.createdDate}, ${r.updatedDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.reference}, ${r.memberId}, ${r.memberEmail}, ${r.memberName}, ${r.status}, ${r.branchId}, ${r.taxInclusive}, ${r.subTotal}, ${r.tax}, ${r.total}, ${r.currencyCode}, ${r.exchangeRate}, ${r.note}, ${r.internalNote}, ${r.account}, ${r.creditDate}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_credit_notes (cin7_id, reference, member_id, member_email, member_name, status, branch_id, tax_inclusive, sub_total, tax, total, currency_code, exchange_rate, note, internal_note, account, credit_date, created_date, updated_date, raw_data, synced_at)
+      INSERT INTO cin7_credit_notes (cin7_id, reference, member_id, member_email, member_name, status, branch_id, tax_inclusive, sub_total, tax, total, currency_code, exchange_rate, note, internal_note, account, credit_date, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         reference = VALUES(reference),
@@ -583,8 +583,8 @@ export async function upsertCreditNotes(rows: CreditNoteInput[]): Promise<number
         internal_note = VALUES(internal_note),
         account = VALUES(account),
         credit_date = VALUES(credit_date),
-        created_date = VALUES(created_date),
-        updated_date = VALUES(updated_date),
+        src_created_at = VALUES(src_created_at),
+        src_modified_at = VALUES(src_modified_at),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `;
@@ -599,11 +599,11 @@ export async function upsertStockAdjustments(rows: StockAdjustmentInput[]): Prom
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.reference}, ${r.branchId}, ${r.status}, ${r.note}, ${r.completedDate}, ${r.createdDate}, ${r.updatedDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.reference}, ${r.branchId}, ${r.status}, ${r.note}, ${r.completedDate}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_stock_adjustments (cin7_id, reference, branch_id, status, note, completed_date, created_date, updated_date, raw_data, synced_at)
+      INSERT INTO cin7_stock_adjustments (cin7_id, reference, branch_id, status, note, completed_date, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         reference = VALUES(reference),
@@ -611,8 +611,8 @@ export async function upsertStockAdjustments(rows: StockAdjustmentInput[]): Prom
         status = VALUES(status),
         note = VALUES(note),
         completed_date = VALUES(completed_date),
-        created_date = VALUES(created_date),
-        updated_date = VALUES(updated_date),
+        src_created_at = VALUES(src_created_at),
+        src_modified_at = VALUES(src_modified_at),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `;
@@ -744,11 +744,11 @@ export async function upsertBranches(rows: BranchInput[]): Promise<number> {
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.name}, ${r.code}, ${r.isActive}, ${r.isDefault}, ${r.address1}, ${r.address2}, ${r.city}, ${r.state}, ${r.postCode}, ${r.country}, ${r.phone}, ${r.email}, ${r.currencyCode}, ${r.createdDate}, ${r.updatedDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.name}, ${r.code}, ${r.isActive}, ${r.isDefault}, ${r.address1}, ${r.address2}, ${r.city}, ${r.state}, ${r.postCode}, ${r.country}, ${r.phone}, ${r.email}, ${r.currencyCode}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_branches (cin7_id, name, code, is_active, is_default, address1, address2, city, state, post_code, country, phone, email, currency_code, created_date, updated_date, raw_data, synced_at)
+      INSERT INTO cin7_branches (cin7_id, name, code, is_active, is_default, address1, address2, city, state, post_code, country, phone, email, currency_code, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         name = VALUES(name),
@@ -764,8 +764,8 @@ export async function upsertBranches(rows: BranchInput[]): Promise<number> {
         phone = VALUES(phone),
         email = VALUES(email),
         currency_code = VALUES(currency_code),
-        created_date = VALUES(created_date),
-        updated_date = VALUES(updated_date),
+        src_created_at = VALUES(src_created_at),
+        src_modified_at = VALUES(src_modified_at),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `;

@@ -62,8 +62,8 @@ shopifyCartWebhookRouter.post(
           ? parseFloat(payload.total_price)
           : null,
         currency: payload.currency ?? null,
-        srcCreatedAt: new Date(payload.created_at),
-        srcModifiedAt: new Date(payload.updated_at),
+        srcCreatedAt: payload.created_at ? new Date(payload.created_at) : null,
+        srcModifiedAt: payload.updated_at ? new Date(payload.updated_at) : null,
         rawData: payload,
         syncedAt,
       });

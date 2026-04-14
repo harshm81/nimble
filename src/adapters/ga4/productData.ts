@@ -1,11 +1,11 @@
 import { config } from '../../config';
 import { GA4_PLATFORM } from '../../constants/ga4';
 import { logger } from '../../utils/logger';
-import { runReport, parseRows } from './ga4Client';
+import { runReportPaginated, parseRows } from './ga4Client';
 import { GA4ProductDataRow } from '../../types/ga4.types';
 
 export async function fetchProductData(date: string): Promise<GA4ProductDataRow[]> {
-  const response = await runReport(config.GA4_PROPERTY_ID ?? '', {
+  const response = await runReportPaginated(config.GA4_PROPERTY_ID ?? '', {
     dateRanges: [{ startDate: date, endDate: date }],
     dimensions: [
       { name: 'date' },
@@ -33,11 +33,11 @@ export async function fetchProductData(date: string): Promise<GA4ProductDataRow[
     itemName:       row['itemName'] || null,
     itemBrand:      row['itemBrand'] || null,
     itemCategory:   row['itemCategory'] || null,
-    itemListViews:  parseInt(row['itemListViews'], 10),
-    itemListClicks: parseInt(row['itemListClicks'], 10),
-    itemViews:      parseInt(row['itemViews'], 10),
-    addToCarts:     parseInt(row['addToCarts'], 10),
-    purchases:      parseInt(row['itemsPurchased'], 10),
-    revenue:        parseFloat(row['itemRevenue']),
+    itemListViews:  row['itemListViews'] || null,
+    itemListClicks: row['itemListClicks'] || null,
+    itemViews:      row['itemViews'] || null,
+    addToCarts:     row['addToCarts'] || null,
+    purchases:      row['itemsPurchased'] || null,
+    revenue:        row['itemRevenue'] || null,
   }));
 }

@@ -233,6 +233,11 @@ All GraphQL adapters use cursor-based pagination:
 
 Products adapter also fetches `variants(first: 100)` nested within each product page — no separate API call for variants.
 
+> **Cursor vs next URL:** Shopify GraphQL uses `pageInfo.endCursor` (an opaque string), not a full `next` URL.
+> Pass the cursor value into the GraphQL variable `$cursor` — do NOT pass it as a URL.
+> This is different from Klaviyo (which returns full URLs in `links.next`).
+> Never confuse the two patterns when adding a new platform.
+
 ---
 
 ## Incremental Sync
@@ -246,6 +251,47 @@ updated_at:>2026-04-13T00:00:00.000Z
 - `setLastSyncedAt` is always called **before** `logSuccess`
 - Inventory is always a full refresh — no incremental filter available on the inventory API
 - `PRODUCT_VARIANTS` uses the same `lastSyncedAt` as `PRODUCTS` (re-fetches products, extracts variants)
+
+---
+
+## Pre-Ship Checklist
+
+### Types
+- [ ] Every money field uses `string | null` in API types (Shopify GraphQL returns money as strings)
+- [ ] Every nested money object (e.g. `totalPriceSet`) is `{ shopMoney: { amount: string } } | null`
+- [ ] All dates are `string` in API types, `Date` after transformer
+
+### Adapters
+- [ ] Shopify client created **once per fetch function call**, not once per page
+- [ ] Rate limiting: header-based (`x-shopify-shop-api-call-limit`), no fixed `sleep()`
+- [ ] Cursor passed as GraphQL variable (`$cursor`), not as a URL
+- [ ] `PRODUCT_VARIANTS` and `INVENTORY` are enqueued by products job — no scheduler entry
+
+### Transformers
+- [ ] Every transformer has explicit `: *Input` return type — never inferred
+- [ ] Every `parseFloat()` call has a null guard: `raw.field ? parseFloat(raw.field) : null`
+- [ ] `transformOrderLineItems` and `transformRefunds` are dedicated functions — never inline
+- [ ] `transformProductVariants` is a dedicated function — never inline
+
+### Worker
+- [ ] All local variables `camelCase`
+- [ ] `logger.info` before `logQueued` at job start
+- [ ] `logQueued` + `logRunning` before `try` block
+- [ ] `setLastSyncedAt` before `logSuccess` in every case
+- [ ] `PRODUCT_VARIANTS` and `INVENTORY` enqueued **after** `logSuccess`, not before
+- [ ] `default` case throws
+
+### Scheduler + Wiring
+- [ ] `tsc --noEmit` passes with zero errors
+- [ ] Every scheduled job has a `case` in the worker
+- [ ] Worker imported in `index.ts`
+- [ ] No scheduler entries for `PRODUCT_VARIANTS` or `INVENTORY` — triggered by products job
+
+### Webhooks
+- [ ] Raw body captured before JSON parser for HMAC verification
+- [ ] HMAC skipped in `development`, enforced in `production`
+- [ ] Webhook route returns `200` immediately — processing is synchronous but fast
+- [ ] No hardcoded platform/job strings
 
 ---
 

@@ -11,8 +11,8 @@ export function transformProductVariants(raw: ShopifyProductNode, syncedAt: Date
     compareAtPrice: v.compareAtPrice !== null ? parseFloat(v.compareAtPrice) : null,
     inventoryQuantity: v.inventoryQuantity,
     position: v.position,
-    srcCreatedAt: new Date(v.createdAt),
-    srcModifiedAt: new Date(v.updatedAt),
+    srcCreatedAt: v.createdAt ? new Date(v.createdAt) : null,
+    srcModifiedAt: v.updatedAt ? new Date(v.updatedAt) : null,
     rawData: v,
     syncedAt,
   }));

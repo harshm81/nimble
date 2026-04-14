@@ -7,6 +7,8 @@ import './src/workers/cin7Worker';
 import './src/workers/shopifyWorker';
 import './src/workers/klaviyoWorker';
 import './src/workers/ga4Worker';
+import './src/workers/facebookWorker';
+import './src/workers/maintenanceWorker';
 import app from './src/server/app';
 import { logger } from './src/utils/logger';
 

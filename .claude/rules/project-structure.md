@@ -25,6 +25,7 @@ src/
   utils/                   # logger, chunk, sleep — shared only
   config/                  # index.ts — env config
   server/                  # Express app
+    webhooks/              # Incoming webhook handlers
   auth/                    # Token management
 ```
 
@@ -58,6 +59,8 @@ export function transformOrder(raw: Cin7SalesOrder, syncedAt: Date): OrderInput 
 - Exports `upsert*` functions returning `Promise<number>`
 - Chunk size: 200 rows — uses `import { chunk } from '../../utils/chunk'`
 - Uses `Prisma.sql` + `Prisma.join` — never string concat SQL
+- Each chunk executes as an independent statement — no wrapping transaction
+- This is intentional: if chunk 3/5 fails, chunks 1-2 persist, and the BullMQ retry re-upserts all 5. `ON DUPLICATE KEY UPDATE` makes this safe
 - No logging, no business logic
 
 ### Types (`src/types/`)

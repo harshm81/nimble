@@ -12,7 +12,7 @@ query GetOrders($cursor: String, $query: String) {
       totalPriceSet { shopMoney { amount } }
       subtotalPriceSet { shopMoney { amount } }
       totalTaxSet { shopMoney { amount } }
-      currencyCode processedAt updatedAt
+      currencyCode createdAt processedAt updatedAt
       lineItems(first: 250) {
         nodes {
           id name sku quantity

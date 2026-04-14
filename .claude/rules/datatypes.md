@@ -168,7 +168,7 @@ All timestamps use `DATETIME(3)` in MySQL — 3 decimal places = millisecond pre
 | Source platform created | `DateTime @map("src_created_at") @db.DateTime(3)` | `DATETIME(3)` | `string` | `Date` |
 | Source platform modified | `DateTime @map("src_modified_at") @db.DateTime(3)` | `DATETIME(3)` | `string` | `Date` |
 | Business domain date | `DateTime? @db.DateTime(3)` | `DATETIME(3)` | `string \| null` | `Date \| null` |
-| Sync timestamp | `DateTime @map("synced_at") @db.DateTime(3)` | `DATETIME(3)` | — | `Date` |
+| Sync timestamp | `DateTime @map("synced_at") @db.DateTime(3)` | `DATETIME(3)` | — | `Date` (generated once per worker job, shared across all records in the run) |
 | GA4 report date (dimension) | `DateTime @map("report_date") @db.DateTime(3)` | `DATETIME(3)` | `string` (`YYYYMMDD`) | parse → `Date` |
 
 **Never use `@db.Date`** (date-only) — always use `DateTime(3)` even for date-only fields to avoid timezone truncation bugs.
@@ -201,6 +201,9 @@ All timestamps use `DATETIME(3)` in MySQL — 3 decimal places = millisecond pre
 | TypeScript (input) | `object` | Pass raw API response object directly |
 
 **Rule:** Every platform sync table must have a `raw_data Json` field storing the full API response.
+- Store the full API response for each **individual record** (not the page/batch wrapper)
+- This enables debugging and re-processing without re-fetching from the API
+- Size is bounded by MySQL's `max_allowed_packet` (default 64 MB) — individual records never approach this
 
 ---
 

@@ -8,8 +8,8 @@ export function transformCustomer(raw: ShopifyCustomerNode, syncedAt: Date): Cus
     firstName: raw.firstName ?? null,
     lastName: raw.lastName ?? null,
     phone: raw.phone ?? null,
-    srcCreatedAt: new Date(raw.createdAt),
-    srcModifiedAt: new Date(raw.updatedAt),
+    srcCreatedAt: raw.createdAt ? new Date(raw.createdAt) : null,
+    srcModifiedAt: raw.updatedAt ? new Date(raw.updatedAt) : null,
     rawData: raw,
     syncedAt,
   };

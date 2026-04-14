@@ -113,7 +113,7 @@ export const klaviyoWorker = new Worker(
   },
   {
     connection,
-    concurrency: 2,
+    concurrency: 1, // campaign-values-reports is 2 req/min — never run two Klaviyo jobs in parallel
     limiter: { max: 3, duration: 1000 },
   },
 );

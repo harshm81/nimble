@@ -54,6 +54,18 @@ paths: ["src/**"]
 - In Prisma schema: `srcCreatedAt`, `srcModifiedAt`, `createdAt`, `modifiedAt` (camelCase)
 - Always index `src_modified_at` — it is used as the incremental sync key
 
+## File Naming
+
+| Layer | Convention | Example |
+|---|---|---|
+| Constants | `<platform>.ts` (lowercase) | `cin7.ts`, `shopify.ts` |
+| Types | `<platform>.types.ts` | `cin7.types.ts` |
+| Transformers | `<resource>Transformer.ts` (camelCase) | `orderTransformer.ts` |
+| Adapters | `<resource>.ts` (camelCase) | `orders.ts`, `products.ts` |
+| API clients | `<platform>Client.ts` (camelCase) | `cin7Client.ts` |
+| Repositories | `<platform>Repo.ts` (camelCase) | `cin7Repo.ts` |
+| Workers | `<platform>Worker.ts` (camelCase) | `cin7Worker.ts` |
+
 ## Types — Nullable Fields
 - Always use `Type | null` — never `Type | undefined` for API response fields
 - Always use `?? null` for nullable assignments in transformers
