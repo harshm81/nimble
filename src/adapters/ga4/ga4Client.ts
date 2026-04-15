@@ -4,9 +4,11 @@ import { GA4_PLATFORM } from '../../constants/ga4';
 import { logger } from '../../utils/logger';
 import { GA4ReportResponse } from '../../types/ga4.types';
 
-function createAnalyticsClient(): BetaAnalyticsDataClient {
+function createAnalyticsClient(): BetaAnalyticsDataClient | null {
+  if (!config.GA4_ENABLED) return null;
   const raw = config.GOOGLE_SERVICE_ACCOUNT_JSON;
-  const credentials = raw ? JSON.parse(raw) : {};
+  if (!raw) return null;
+  const credentials = JSON.parse(raw);
   return new BetaAnalyticsDataClient({ credentials });
 }
 
@@ -18,6 +20,9 @@ export async function runReport(
   propertyId: string,
   requestBody: object,
 ): Promise<GA4ReportResponse> {
+  if (!analyticsDataClient) {
+    throw new Error('GA4 client not initialised — GA4_ENABLED is false or GOOGLE_SERVICE_ACCOUNT_JSON is missing');
+  }
   const [response] = await analyticsDataClient.runReport({
     property: `properties/${propertyId}`,
     ...requestBody,

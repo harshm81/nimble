@@ -32,6 +32,12 @@ const envSchema = z.object({
   KLAVIYO_API_KEY: z.string().optional(),
   KLAVIYO_CONVERSION_METRIC_ID: z.string().optional(),
   KLAVIYO_SYNC_EVENT_TYPES: z.string().optional(),
+
+  CIN7_ENABLED:     z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+  SHOPIFY_ENABLED:  z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+  GA4_ENABLED:      z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+  FACEBOOK_ENABLED: z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
+  KLAVIYO_ENABLED:  z.enum(['true', 'false']).default('true').transform((v) => v === 'true'),
 });
 
 const parsed = envSchema.safeParse(process.env);

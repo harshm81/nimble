@@ -17,25 +17,28 @@ shopifyCartWebhookRouter.post(
     const topic = req.headers['x-shopify-topic'] as string | undefined;
     const rawBody: Buffer = (req as Request & { rawBody?: Buffer }).rawBody ?? Buffer.alloc(0);
 
-    // Verify HMAC signature when secret is configured.
-    // Skipped in development so the endpoint can be tested locally via Postman
-    // without needing to compute a matching signature.
-    if (config.SHOPIFY_WEBHOOK_SECRET && config.NODE_ENV !== 'development') {
-      if (!hmacHeader) {
-        res.status(401).json({ error: 'Missing HMAC header' });
-        return;
-      }
+    // Verify HMAC signature. Always enforced — SHOPIFY_WEBHOOK_SECRET must be set.
+    // In development, set the secret to the value from your Shopify partner dashboard.
+    if (!config.SHOPIFY_WEBHOOK_SECRET) {
+      logger.error({ platform: SHOPIFY_PLATFORM }, 'SHOPIFY_WEBHOOK_SECRET not configured — rejecting webhook');
+      res.status(500).json({ error: 'Webhook secret not configured' });
+      return;
+    }
 
-      const expected = crypto
-        .createHmac('sha256', config.SHOPIFY_WEBHOOK_SECRET)
-        .update(rawBody)
-        .digest('base64');
+    if (!hmacHeader) {
+      res.status(401).json({ error: 'Missing HMAC header' });
+      return;
+    }
 
-      if (!crypto.timingSafeEqual(Buffer.from(hmacHeader), Buffer.from(expected))) {
-        logger.warn({ platform: SHOPIFY_PLATFORM, topic }, 'shopify webhook HMAC verification failed');
-        res.status(401).json({ error: 'Invalid HMAC signature' });
-        return;
-      }
+    const expected = crypto
+      .createHmac('sha256', config.SHOPIFY_WEBHOOK_SECRET)
+      .update(rawBody)
+      .digest('base64');
+
+    if (!crypto.timingSafeEqual(Buffer.from(hmacHeader), Buffer.from(expected))) {
+      logger.warn({ platform: SHOPIFY_PLATFORM, topic }, 'shopify webhook HMAC verification failed');
+      res.status(401).json({ error: 'Invalid HMAC signature' });
+      return;
     }
 
     // Determine event type from topic header (carts/create or carts/update)

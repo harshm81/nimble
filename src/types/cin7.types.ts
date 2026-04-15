@@ -79,7 +79,7 @@ export interface Cin7SalesOrder {
   shippingState: string | null;
   shippingPostCode: string | null;
   shippingCountry: string | null;
-  lineItems: Cin7LineItem[];
+  lineItems: Cin7LineItem[] | null;
 }
 
 export interface Cin7Contact {
@@ -220,7 +220,7 @@ export interface Cin7PurchaseOrder {
   deliveryState: string | null;
   deliveryPostCode: string | null;
   deliveryCountry: string | null;
-  lineItems: Cin7LineItem[];
+  lineItems: Cin7LineItem[] | null;
 }
 
 export interface Cin7CreditNote {
@@ -243,7 +243,7 @@ export interface Cin7CreditNote {
   note: string | null;
   internalNote: string | null;
   account: string | null;
-  lineItems: Cin7LineItem[];
+  lineItems: Cin7LineItem[] | null;
 }
 
 export interface Cin7StockAdjustment {
@@ -255,7 +255,7 @@ export interface Cin7StockAdjustment {
   updatedDate: string | null;
   completedDate: string | null;
   note: string | null;
-  lineItems: Cin7LineItem[];
+  lineItems: Cin7LineItem[] | null;
 }
 
 export interface Cin7Branch {

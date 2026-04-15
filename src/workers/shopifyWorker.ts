@@ -23,8 +23,12 @@ import {
 import { getLastSyncedAt, setLastSyncedAt } from '../db/repositories/syncConfigRepo';
 import { logQueued, logRunning, logSuccess, logFailure } from '../db/repositories/syncLogRepo';
 import { logger } from '../utils/logger';
+import { config } from '../config';
 
-export const shopifyWorker = new Worker(
+if (!config.SHOPIFY_ENABLED) {
+  logger.warn({ platform: SHOPIFY_PLATFORM }, 'shopify disabled — worker not started');
+} else {
+new Worker(
   SHOPIFY_QUEUE,
   async (job) => {
     const startedAt = Date.now();
@@ -45,7 +49,12 @@ export const shopifyWorker = new Worker(
           const recordsSaved = await upsertOrders(orders);
           await upsertOrderLineItems(lineItems);
           await upsertRefunds(refunds);
-          await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            if (!r.updatedAt) return max;
+            const d = new Date(r.updatedAt);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
             recordsFetched: raw.length,
             recordsSaved,
@@ -59,7 +68,12 @@ export const shopifyWorker = new Worker(
           const raw = await fetchCustomers(lastSyncedAt);
           const rows = raw.map((r) => transformCustomer(r, syncedAt));
           const recordsSaved = await upsertCustomers(rows);
-          await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            if (!r.updatedAt) return max;
+            const d = new Date(r.updatedAt);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
             recordsFetched: raw.length,
             recordsSaved,
@@ -77,7 +91,12 @@ export const shopifyWorker = new Worker(
           const variants = raw.flatMap((r) => transformProductVariants(r, syncedAt));
           const recordsSaved = await upsertProducts(rows);
           await upsertProductVariants(variants);
-          await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            if (!r.updatedAt) return max;
+            const d = new Date(r.updatedAt);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
             recordsFetched: raw.length,
             recordsSaved,
@@ -92,6 +111,7 @@ export const shopifyWorker = new Worker(
         }
 
         case SHOPIFY_JOBS.INVENTORY: {
+          // Inventory has no updatedAt — it is a full snapshot each sync
           const raw = await fetchInventory();
           const rows = raw.map((r) => transformInventory(r, syncedAt));
           const recordsSaved = await upsertInventory(rows);
@@ -112,7 +132,12 @@ export const shopifyWorker = new Worker(
           const raw = await fetchProducts(lastSyncedAt);
           const variants = raw.flatMap((r) => transformProductVariants(r, syncedAt));
           const recordsSaved = await upsertProductVariants(variants);
-          await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            if (!r.updatedAt) return max;
+            const d = new Date(r.updatedAt);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
             recordsFetched: variants.length,
             recordsSaved,
@@ -140,3 +165,4 @@ export const shopifyWorker = new Worker(
     limiter: { max: 3, duration: 1000 },
   },
 );
+}

@@ -4,17 +4,17 @@ import { chunk } from '../../utils/chunk';
 
 export interface OrderInput {
   cin7Id: number;
-  orderNumber: string;
+  orderNumber: string | null;
   customerEmail: string | null;
   cin7MemberId: number | null;
-  status: string;
-  totalAmount: number;
-  taxTotal: number;
-  lineItemTotal: number;
+  status: string | null;
+  totalAmount: number | null;
+  taxTotal: number | null;
+  lineItemTotal: number | null;
   shippingTotal: number | null;
   paymentTerms: string | null;
-  branchId: number;
-  currency: string;
+  branchId: number | null;
+  currency: string | null;
   srcCreatedAt: Date | null;
   srcModifiedAt: Date | null;
   rawData: object;
@@ -24,17 +24,17 @@ export interface OrderInput {
 export interface OrderLineItemInput {
   orderId: number;
   cin7LineItemId: number;
-  productId: number;
-  code: string;
-  name: string;
-  qty: number;
-  unitPrice: number;
-  discount: number;
-  tax: number;
-  total: number;
-  unitCost: number;
-  lineItemType: string;
-  sortOrder: number;
+  productId: number | null;
+  code: string | null;
+  name: string | null;
+  qty: number | null;
+  unitPrice: number | null;
+  discount: number | null;
+  tax: number | null;
+  total: number | null;
+  unitCost: number | null;
+  lineItemType: string | null;
+  sortOrder: number | null;
   option1: string | null;
   option2: string | null;
   option3: string | null;
@@ -48,7 +48,7 @@ export interface OrderLineItemInput {
 
 export interface ContactInput {
   cin7Id: number;
-  type: string;
+  type: string | null;
   firstName: string | null;
   lastName: string | null;
   email: string | null;
@@ -63,7 +63,7 @@ export interface ContactInput {
   state: string | null;
   postCode: string | null;
   country: string | null;
-  isActive: boolean;
+  isActive: boolean | null;
   accountCode: string | null;
   priceTier: string | null;
   discount: number | null;
@@ -82,8 +82,8 @@ export interface ContactInput {
 
 export interface ProductInput {
   cin7Id: number;
-  name: string;
-  code: string;
+  name: string | null;
+  code: string | null;
   barcode: string | null;
   category: string | null;
   brand: string | null;
@@ -91,12 +91,12 @@ export interface ProductInput {
   supplierId: number | null;
   description: string | null;
   shortDescription: string | null;
-  isActive: boolean;
-  type: string;
+  isActive: boolean | null;
+  type: string | null;
   option1Name: string | null;
   option2Name: string | null;
   option3Name: string | null;
-  unitPrice: number;
+  unitPrice: number | null;
   costPrice: number | null;
   taxRule: string | null;
   accountCode: string | null;
@@ -115,20 +115,20 @@ export interface ProductInput {
 
 export interface InventoryInput {
   cin7Id: number;
-  productId: number;
-  branchId: number;
-  code: string;
-  name: string;
+  productId: number | null;
+  branchId: number | null;
+  code: string | null;
+  name: string | null;
   barcode: string | null;
   option1: string | null;
   option2: string | null;
   option3: string | null;
   styleCode: string | null;
-  isActive: boolean;
-  stockOnHand: number;
-  available: number;
-  committed: number;
-  incoming: number;
+  isActive: boolean | null;
+  stockOnHand: number | null;
+  available: number | null;
+  committed: number | null;
+  incoming: number | null;
   binLocation: string | null;
   reorderPoint: number | null;
   reorderQty: number | null;
@@ -140,18 +140,18 @@ export interface InventoryInput {
 
 export interface PurchaseOrderInput {
   cin7Id: number;
-  reference: string;
+  reference: string | null;
   supplierId: number | null;
   supplierName: string | null;
   supplierEmail: string | null;
-  status: string;
-  branchId: number;
-  taxInclusive: boolean;
-  subTotal: number;
-  tax: number;
-  total: number;
-  currencyCode: string;
-  exchangeRate: number;
+  status: string | null;
+  branchId: number | null;
+  taxInclusive: boolean | null;
+  subTotal: number | null;
+  tax: number | null;
+  total: number | null;
+  currencyCode: string | null;
+  exchangeRate: number | null;
   note: string | null;
   internalNote: string | null;
   shippingCompany: string | null;
@@ -169,18 +169,18 @@ export interface PurchaseOrderInput {
 
 export interface CreditNoteInput {
   cin7Id: number;
-  reference: string;
+  reference: string | null;
   memberId: number | null;
   memberEmail: string | null;
   memberName: string | null;
-  status: string;
-  branchId: number;
-  taxInclusive: boolean;
-  subTotal: number;
-  tax: number;
-  total: number;
-  currencyCode: string;
-  exchangeRate: number;
+  status: string | null;
+  branchId: number | null;
+  taxInclusive: boolean | null;
+  subTotal: number | null;
+  tax: number | null;
+  total: number | null;
+  currencyCode: string | null;
+  exchangeRate: number | null;
   note: string | null;
   internalNote: string | null;
   account: string | null;
@@ -193,9 +193,9 @@ export interface CreditNoteInput {
 
 export interface StockAdjustmentInput {
   cin7Id: number;
-  reference: string;
-  branchId: number;
-  status: string;
+  reference: string | null;
+  branchId: number | null;
+  status: string | null;
   note: string | null;
   completedDate: Date | null;
   srcCreatedAt: Date | null;
@@ -207,17 +207,17 @@ export interface StockAdjustmentInput {
 export interface PurchaseOrderLineItemInput {
   purchaseOrderId: number;
   cin7LineItemId: number;
-  productId: number;
-  code: string;
-  name: string;
-  qty: number;
-  unitPrice: number;
-  discount: number;
-  tax: number;
-  total: number;
-  unitCost: number;
-  lineItemType: string;
-  sortOrder: number;
+  productId: number | null;
+  code: string | null;
+  name: string | null;
+  qty: number | null;
+  unitPrice: number | null;
+  discount: number | null;
+  tax: number | null;
+  total: number | null;
+  unitCost: number | null;
+  lineItemType: string | null;
+  sortOrder: number | null;
   option1: string | null;
   option2: string | null;
   option3: string | null;
@@ -232,17 +232,17 @@ export interface PurchaseOrderLineItemInput {
 export interface CreditNoteLineItemInput {
   creditNoteId: number;
   cin7LineItemId: number;
-  productId: number;
-  code: string;
-  name: string;
-  qty: number;
-  unitPrice: number;
-  discount: number;
-  tax: number;
-  total: number;
-  unitCost: number;
-  lineItemType: string;
-  sortOrder: number;
+  productId: number | null;
+  code: string | null;
+  name: string | null;
+  qty: number | null;
+  unitPrice: number | null;
+  discount: number | null;
+  tax: number | null;
+  total: number | null;
+  unitCost: number | null;
+  lineItemType: string | null;
+  sortOrder: number | null;
   option1: string | null;
   option2: string | null;
   option3: string | null;
@@ -257,17 +257,17 @@ export interface CreditNoteLineItemInput {
 export interface StockAdjustmentLineItemInput {
   stockAdjustmentId: number;
   cin7LineItemId: number;
-  productId: number;
-  code: string;
-  name: string;
-  qty: number;
-  unitPrice: number;
-  discount: number;
-  tax: number;
-  total: number;
-  unitCost: number;
-  lineItemType: string;
-  sortOrder: number;
+  productId: number | null;
+  code: string | null;
+  name: string | null;
+  qty: number | null;
+  unitPrice: number | null;
+  discount: number | null;
+  tax: number | null;
+  total: number | null;
+  unitCost: number | null;
+  lineItemType: string | null;
+  sortOrder: number | null;
   option1: string | null;
   option2: string | null;
   option3: string | null;
@@ -281,10 +281,10 @@ export interface StockAdjustmentLineItemInput {
 
 export interface BranchInput {
   cin7Id: number;
-  name: string;
+  name: string | null;
   code: string | null;
-  isActive: boolean;
-  isDefault: boolean;
+  isActive: boolean | null;
+  isDefault: boolean | null;
   address1: string | null;
   address2: string | null;
   city: string | null;

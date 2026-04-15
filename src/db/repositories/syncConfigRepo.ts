@@ -11,15 +11,7 @@ export async function getLastSyncedAt(platform: string, jobType: string): Promis
 export function setLastSyncedAt(platform: string, jobType: string, date: Date) {
   return prisma.syncConfig.upsert({
     where: { platform_job_type: { platform, jobType } },
-    create: { platform, jobType, lastSyncedAt: date, intervalMinutes: 0 },
+    create: { platform, jobType, lastSyncedAt: date },
     update: { lastSyncedAt: date },
-  });
-}
-
-export function ensureConfig(platform: string, jobType: string, intervalMinutes: number) {
-  return prisma.syncConfig.upsert({
-    where: { platform_job_type: { platform, jobType } },
-    create: { platform, jobType, intervalMinutes },
-    update: {},
   });
 }

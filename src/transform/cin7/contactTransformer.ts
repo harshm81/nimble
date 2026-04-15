@@ -4,7 +4,7 @@ import { ContactInput } from '../../db/repositories/cin7Repo';
 export function transformContact(raw: Cin7Contact, syncedAt: Date): ContactInput {
   return {
     cin7Id: raw.id,
-    type: raw.type ?? '',
+    type: raw.type ?? null,
     firstName: raw.firstName ?? null,
     lastName: raw.lastName ?? null,
     email: raw.email ?? null,
@@ -19,7 +19,7 @@ export function transformContact(raw: Cin7Contact, syncedAt: Date): ContactInput
     state: raw.state ?? null,
     postCode: raw.postCode ?? null,
     country: raw.country ?? null,
-    isActive: raw.isActive ?? false,
+    isActive: raw.isActive ?? null,
     accountCode: raw.accountCode ?? null,
     priceTier: raw.priceTier ?? null,
     discount: raw.discount ?? null,

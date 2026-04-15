@@ -28,8 +28,12 @@ import {
 import { getLastSyncedAt, setLastSyncedAt } from '../db/repositories/syncConfigRepo';
 import { logQueued, logRunning, logSuccess, logFailure } from '../db/repositories/syncLogRepo';
 import { logger } from '../utils/logger';
+import { config } from '../config';
 
-export const facebookWorker = new Worker(
+if (!config.FACEBOOK_ENABLED) {
+  logger.warn({ platform: FACEBOOK_PLATFORM }, 'facebook disabled — worker not started');
+} else {
+new Worker(
   FACEBOOK_QUEUE,
   async (job) => {
     const startedAt = Date.now();
@@ -47,8 +51,12 @@ export const facebookWorker = new Worker(
           const raw   = await fetchCampaigns(last);
           const rows  = raw.map((r) => transformCampaign(r, syncedAt));
           const saved = await upsertCampaigns(rows);
-
-          await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            if (!r.updated_time) return max;
+            const d = new Date(r.updated_time);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, { recordsFetched: raw.length, recordsSaved: saved, recordsSkipped: 0, durationMs: Date.now() - startedAt });
           break;
         }
@@ -58,8 +66,12 @@ export const facebookWorker = new Worker(
           const raw   = await fetchAdsets(last);
           const rows  = raw.map((r) => transformAdset(r, syncedAt));
           const saved = await upsertAdsets(rows);
-
-          await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            if (!r.updated_time) return max;
+            const d = new Date(r.updated_time);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, { recordsFetched: raw.length, recordsSaved: saved, recordsSkipped: 0, durationMs: Date.now() - startedAt });
           break;
         }
@@ -69,40 +81,44 @@ export const facebookWorker = new Worker(
           const raw   = await fetchAds(last);
           const rows  = raw.map((r) => transformAd(r, syncedAt));
           const saved = await upsertAds(rows);
-
-          await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            if (!r.updated_time) return max;
+            const d = new Date(r.updated_time);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, { recordsFetched: raw.length, recordsSaved: saved, recordsSkipped: 0, durationMs: Date.now() - startedAt });
           break;
         }
 
         case FACEBOOK_JOBS.CAMPAIGN_INSIGHTS: {
+          // Insights are date-based aggregates — use syncedAt as cursor
           const date  = getYesterdayDate();
           const raw   = await fetchCampaignInsights(date);
           const rows  = raw.map((r) => transformCampaignInsight(r, syncedAt));
           const saved = await upsertCampaignInsights(rows);
-
           await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, syncedAt);
           await logSuccess(syncLog.id, { recordsFetched: raw.length, recordsSaved: saved, recordsSkipped: 0, durationMs: Date.now() - startedAt });
           break;
         }
 
         case FACEBOOK_JOBS.ADSET_INSIGHTS: {
+          // Insights are date-based aggregates — use syncedAt as cursor
           const date  = getYesterdayDate();
           const raw   = await fetchAdsetInsights(date);
           const rows  = raw.map((r) => transformAdsetInsight(r, syncedAt));
           const saved = await upsertAdsetInsights(rows);
-
           await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, syncedAt);
           await logSuccess(syncLog.id, { recordsFetched: raw.length, recordsSaved: saved, recordsSkipped: 0, durationMs: Date.now() - startedAt });
           break;
         }
 
         case FACEBOOK_JOBS.AD_INSIGHTS: {
+          // Insights are date-based aggregates — use syncedAt as cursor
           const date  = getYesterdayDate();
           const raw   = await fetchAdInsights(date);
           const rows  = raw.map((r) => transformAdInsight(r, syncedAt));
           const saved = await upsertAdInsights(rows);
-
           await setLastSyncedAt(FACEBOOK_PLATFORM, job.name, syncedAt);
           await logSuccess(syncLog.id, { recordsFetched: raw.length, recordsSaved: saved, recordsSkipped: 0, durationMs: Date.now() - startedAt });
           break;
@@ -123,6 +139,7 @@ export const facebookWorker = new Worker(
     limiter: { max: 5, duration: 1000 },
   },
 );
+}
 
 function getYesterdayDate(): string {
   const d = new Date();

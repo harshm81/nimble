@@ -295,11 +295,12 @@ export async function upsertProductVariants(rows: ProductVariantInput[]): Promis
 }
 
 export async function upsertCartEvent(row: CartEventInput): Promise<void> {
+  // Unique key is (shopify_cart_id, event_type) — create and update are stored as separate rows.
+  // ON DUPLICATE KEY UPDATE only fires when the same cart fires the same event type twice (retry).
   await prisma.$executeRaw`
     INSERT INTO shopify_cart_events (shopify_cart_id, event_type, customer_email, customer_id, line_items_count, total_price, currency, src_created_at, src_modified_at, raw_data, synced_at)
     VALUES (${row.shopifyCartId}, ${row.eventType}, ${row.customerEmail}, ${row.customerId}, ${row.lineItemsCount}, ${row.totalPrice}, ${row.currency}, ${row.srcCreatedAt}, ${row.srcModifiedAt}, ${JSON.stringify(row.rawData)}, ${row.syncedAt})
     ON DUPLICATE KEY UPDATE
-      event_type = VALUES(event_type),
       customer_email = VALUES(customer_email),
       customer_id = VALUES(customer_id),
       line_items_count = VALUES(line_items_count),

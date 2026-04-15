@@ -21,8 +21,12 @@ import {
 import { getLastSyncedAt, setLastSyncedAt } from '../db/repositories/syncConfigRepo';
 import { logQueued, logRunning, logSuccess, logFailure } from '../db/repositories/syncLogRepo';
 import { logger } from '../utils/logger';
+import { config } from '../config';
 
-export const klaviyoWorker = new Worker(
+if (!config.KLAVIYO_ENABLED) {
+  logger.warn({ platform: KLAVIYO_PLATFORM }, 'klaviyo disabled — worker not started');
+} else {
+new Worker(
   KLAVIYO_QUEUE,
   async (job) => {
     const startedAt = Date.now();
@@ -47,7 +51,13 @@ export const klaviyoWorker = new Worker(
 
           const campaignsSaved = await upsertCampaigns(campaigns);
           const statsSaved = await upsertCampaignStats(campaignStats);
-          await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, syncedAt);
+          const latestModified = rawCampaigns.reduce<Date | null>((max, r) => {
+            const ts = r.attributes.updated_at;
+            if (!ts) return max;
+            const d = new Date(ts);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
             recordsFetched: rawCampaigns.length,
             recordsSaved: campaignsSaved + statsSaved,
@@ -61,7 +71,13 @@ export const klaviyoWorker = new Worker(
           const raw = await fetchProfiles(lastSyncedAt);
           const rows = raw.map((r) => transformProfile(r, syncedAt));
           const recordsSaved = await upsertProfiles(rows);
-          await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            const ts = r.attributes.updated;
+            if (!ts) return max;
+            const d = new Date(ts);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
             recordsFetched: raw.length,
             recordsSaved,
@@ -72,6 +88,7 @@ export const klaviyoWorker = new Worker(
         }
 
         case KLAVIYO_JOBS.EVENTS: {
+          // Events are filtered by datetime, not updatedAt — use syncedAt as cursor
           const raw = await fetchEvents(lastSyncedAt);
           const rows = raw.map((r) => transformEvent(r, syncedAt));
           const recordsSaved = await upsertEvents(rows);
@@ -89,7 +106,13 @@ export const klaviyoWorker = new Worker(
           const raw = await fetchFlows(lastSyncedAt);
           const rows = raw.map((r) => transformFlow(r, syncedAt));
           const recordsSaved = await upsertFlows(rows);
-          await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, syncedAt);
+          const latestModified = raw.reduce<Date | null>((max, r) => {
+            const ts = r.attributes.updated;
+            if (!ts) return max;
+            const d = new Date(ts);
+            return max === null || d > max ? d : max;
+          }, null);
+          await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
             recordsFetched: raw.length,
             recordsSaved,
@@ -117,3 +140,4 @@ export const klaviyoWorker = new Worker(
     limiter: { max: 3, duration: 1000 },
   },
 );
+}

@@ -4,10 +4,10 @@ import { BranchInput } from '../../db/repositories/cin7Repo';
 export function transformBranch(raw: Cin7Branch, syncedAt: Date): BranchInput {
   return {
     cin7Id: raw.id,
-    name: raw.name ?? '',
+    name: raw.name ?? null,
     code: raw.code ?? null,
-    isActive: raw.isActive ?? false,
-    isDefault: raw.isDefault ?? false,
+    isActive: raw.isActive ?? null,
+    isDefault: raw.isDefault ?? null,
     address1: raw.address1 ?? null,
     address2: raw.address2 ?? null,
     city: raw.city ?? null,
