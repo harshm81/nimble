@@ -53,7 +53,7 @@ export function transformPurchaseOrder(raw: Cin7PurchaseOrder, syncedAt: Date): 
     requiredDate: raw.requiredDate ? new Date(raw.requiredDate) : null,
     completedDate: raw.completedDate ? new Date(raw.completedDate) : null,
     srcCreatedAt: raw.createdDate ? new Date(raw.createdDate) : null,
-    srcModifiedAt: raw.updatedDate ? new Date(raw.updatedDate) : null,
+    srcModifiedAt: raw.modifiedDate ? new Date(raw.modifiedDate) : null,
     rawData: raw,
     syncedAt,
   };

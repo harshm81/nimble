@@ -28,7 +28,7 @@ export interface OrderLineItemInput {
   shopifyLineItemId: string;
   name: string | null;
   sku: string | null;
-  quantity: number;
+  quantity: number | null;
   originalUnitPrice: number | null;
   discountedUnitPrice: number | null;
   totalDiscount: number | null;
@@ -59,8 +59,8 @@ export interface CustomerInput {
 
 export interface ProductInput {
   shopifyId: string;
-  title: string;
-  status: string;
+  title: string | null;
+  status: string | null;
   srcCreatedAt: Date | null;
   srcModifiedAt: Date | null;
   rawData: object;
@@ -69,7 +69,7 @@ export interface ProductInput {
 
 export interface InventoryInput {
   shopifyId: string;
-  available: number;
+  available: number | null;
   srcModifiedAt: Date | null;
   rawData: object;
   syncedAt: Date;

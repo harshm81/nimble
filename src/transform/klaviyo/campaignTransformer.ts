@@ -9,7 +9,7 @@ export function transformCampaign(
     klaviyoId:     raw.id,
     name:          raw.attributes.name ?? null,
     status:        raw.attributes.status ?? null,
-    channel:       raw.attributes.channel ?? null,
+    channel:       raw.attributes._channel ?? null,
     sendTime:      raw.attributes.send_time ? new Date(raw.attributes.send_time) : null,
     srcCreatedAt:  raw.attributes.created_at ? new Date(raw.attributes.created_at) : null,
     srcModifiedAt: raw.attributes.updated_at ? new Date(raw.attributes.updated_at) : null,

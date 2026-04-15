@@ -34,13 +34,14 @@ export interface Cin7SalesOrder {
   memberName: string | null;
   status: string | null;
   createdDate: string | null;
-  updatedDate: string | null;
+  modifiedDate: string | null;
   completedDate: string | null;
   invoiceDate: string | null;
-  invoiceNumber: string | null;
+  invoiceNumber: number | null;
   dueDate: string | null;
   branchId: number | null;
   priceTier: string | null;
+  paymentTerms: string | null;
   taxInclusive: boolean | null;
   subTotal: number | null;
   tax: number | null;
@@ -112,7 +113,7 @@ export interface Cin7Contact {
   note: string | null;
   group: string | null;
   createdDate: string | null;
-  updatedDate: string | null;
+  modifiedDate: string | null;
 }
 
 export interface Cin7Product {
@@ -152,7 +153,7 @@ export interface Cin7Product {
   depth: number | null;
   type: string | null;
   createdDate: string | null;
-  updatedDate: string | null;
+  modifiedDate: string | null;
 }
 
 export interface Cin7StockItem {
@@ -191,7 +192,7 @@ export interface Cin7PurchaseOrder {
   supplierEmail: string | null;
   status: string | null;
   createdDate: string | null;
-  updatedDate: string | null;
+  modifiedDate: string | null;
   completedDate: string | null;
   requiredDate: string | null;
   branchId: number | null;
@@ -231,7 +232,7 @@ export interface Cin7CreditNote {
   memberName: string | null;
   status: string | null;
   createdDate: string | null;
-  updatedDate: string | null;
+  modifiedDate: string | null;
   creditDate: string | null;
   branchId: number | null;
   taxInclusive: boolean | null;
@@ -252,7 +253,7 @@ export interface Cin7StockAdjustment {
   branchId: number | null;
   status: string | null;
   createdDate: string | null;
-  updatedDate: string | null;
+  modifiedDate: string | null;
   completedDate: string | null;
   note: string | null;
   lineItems: Cin7LineItem[] | null;
@@ -274,5 +275,5 @@ export interface Cin7Branch {
   email: string | null;
   currencyCode: string | null;
   createdDate: string | null;
-  updatedDate: string | null;
+  modifiedDate: string | null;
 }

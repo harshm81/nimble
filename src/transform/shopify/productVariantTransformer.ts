@@ -5,8 +5,8 @@ export function transformProductVariants(raw: ShopifyProductNode, syncedAt: Date
   return raw.variants.nodes.map((v): ProductVariantInput => ({
     shopifyProductId: raw.id,
     shopifyVariantId: v.id,
-    title: v.title,
-    sku: v.sku,
+    title: v.title ?? null,
+    sku: v.sku ?? null,
     price: v.price !== null ? parseFloat(v.price) : null,
     compareAtPrice: v.compareAtPrice !== null ? parseFloat(v.compareAtPrice) : null,
     inventoryQuantity: v.inventoryQuantity,

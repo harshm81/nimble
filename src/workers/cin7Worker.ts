@@ -43,7 +43,7 @@ new Worker(
   CIN7_QUEUE,
   async (job) => {
     const startedAt = Date.now();
-    logger.info({ platform: CIN7_PLATFORM, job: job.name }, 'job started');
+    logger.info({ platform: CIN7_PLATFORM, jobName: job.name }, 'job started');
     const queuedId = await logQueued(CIN7_PLATFORM, job.name);
     const syncLog = await logRunning(queuedId);
 
@@ -59,8 +59,8 @@ new Worker(
           const recordsSaved = await upsertOrders(orders);
           await upsertOrderLineItems(lineItems);
           const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedDate) return max;
-            const d = new Date(r.updatedDate);
+            if (!r.modifiedDate) return max;
+            const d = new Date(r.modifiedDate);
             return max === null || d > max ? d : max;
           }, null);
           await setLastSyncedAt(CIN7_PLATFORM, job.name, latestModified ?? syncedAt);
@@ -78,8 +78,8 @@ new Worker(
           const rows = raw.map((r) => transformContact(r, syncedAt));
           const recordsSaved = await upsertContacts(rows);
           const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedDate) return max;
-            const d = new Date(r.updatedDate);
+            if (!r.modifiedDate) return max;
+            const d = new Date(r.modifiedDate);
             return max === null || d > max ? d : max;
           }, null);
           await setLastSyncedAt(CIN7_PLATFORM, job.name, latestModified ?? syncedAt);
@@ -97,8 +97,8 @@ new Worker(
           const rows = raw.map((r) => transformProduct(r, syncedAt));
           const recordsSaved = await upsertProducts(rows);
           const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedDate) return max;
-            const d = new Date(r.updatedDate);
+            if (!r.modifiedDate) return max;
+            const d = new Date(r.modifiedDate);
             return max === null || d > max ? d : max;
           }, null);
           await setLastSyncedAt(CIN7_PLATFORM, job.name, latestModified ?? syncedAt);
@@ -133,8 +133,8 @@ new Worker(
           const recordsSaved = await upsertPurchaseOrders(rows);
           await upsertPurchaseOrderLineItems(lineItems);
           const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedDate) return max;
-            const d = new Date(r.updatedDate);
+            if (!r.modifiedDate) return max;
+            const d = new Date(r.modifiedDate);
             return max === null || d > max ? d : max;
           }, null);
           await setLastSyncedAt(CIN7_PLATFORM, job.name, latestModified ?? syncedAt);
@@ -154,8 +154,8 @@ new Worker(
           const recordsSaved = await upsertCreditNotes(rows);
           await upsertCreditNoteLineItems(lineItems);
           const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedDate) return max;
-            const d = new Date(r.updatedDate);
+            if (!r.modifiedDate) return max;
+            const d = new Date(r.modifiedDate);
             return max === null || d > max ? d : max;
           }, null);
           await setLastSyncedAt(CIN7_PLATFORM, job.name, latestModified ?? syncedAt);
@@ -175,8 +175,8 @@ new Worker(
           const recordsSaved = await upsertStockAdjustments(rows);
           await upsertStockAdjustmentLineItems(lineItems);
           const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedDate) return max;
-            const d = new Date(r.updatedDate);
+            if (!r.modifiedDate) return max;
+            const d = new Date(r.modifiedDate);
             return max === null || d > max ? d : max;
           }, null);
           await setLastSyncedAt(CIN7_PLATFORM, job.name, latestModified ?? syncedAt);

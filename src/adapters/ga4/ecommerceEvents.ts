@@ -18,13 +18,12 @@ export async function fetchEcommerceEvents(date: string): Promise<GA4EcommerceEv
       { name: 'purchaseRevenue' },
       { name: 'addToCarts' },
       { name: 'checkouts' },
-      { name: 'eventCount' },
     ],
     dimensionFilter: {
       filter: {
         fieldName: 'eventName',
         inListFilter: {
-          values: ['add_to_cart', 'begin_checkout', 'purchase', 'view_item'],
+          values: ['add_to_cart', 'begin_checkout', 'purchase'],
         },
       },
     },
@@ -42,6 +41,5 @@ export async function fetchEcommerceEvents(date: string): Promise<GA4EcommerceEv
     revenue:        row['purchaseRevenue'] || null,
     addToCarts:     row['addToCarts'] || null,
     checkouts:      row['checkouts'] || null,
-    viewItemEvents: row['eventName'] === 'view_item' ? (row['eventCount'] || null) : null,
   }));
 }

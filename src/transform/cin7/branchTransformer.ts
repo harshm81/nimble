@@ -18,7 +18,7 @@ export function transformBranch(raw: Cin7Branch, syncedAt: Date): BranchInput {
     email: raw.email ?? null,
     currencyCode: raw.currencyCode ?? null,
     srcCreatedAt: raw.createdDate ? new Date(raw.createdDate) : null,
-    srcModifiedAt: raw.updatedDate ? new Date(raw.updatedDate) : null,
+    srcModifiedAt: raw.modifiedDate ? new Date(raw.modifiedDate) : null,
     rawData: raw,
     syncedAt,
   };

@@ -46,7 +46,7 @@ export async function fetchEvents(lastSyncedAt: Date | null): Promise<KlaviyoEve
   }
 
   const params: Record<string, string | number> = {
-    'page[size]': 1000, // API maximum — reduces requests 10x vs default 100
+    'page[size]': 200, // API maximum per page
     include: 'metric',
     ...(filterParts.length === 1 && { filter: filterParts[0] }),
     ...(filterParts.length > 1 && { filter: `and(${filterParts.join(',')})` }),

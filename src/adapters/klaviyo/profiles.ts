@@ -21,6 +21,7 @@ export async function fetchProfiles(lastSyncedAt: Date | null): Promise<KlaviyoP
 
   const params: Record<string, string | number> = {
     'page[size]': 100,
+    'additional-fields[profile]': 'subscriptions',
     ...(lastSyncedAt && { filter: `greater-than(updated,${lastSyncedAt.toISOString()})` }),
   };
 

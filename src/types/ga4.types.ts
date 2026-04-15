@@ -39,6 +39,7 @@ export interface GA4SessionRow {
   medium: string | null;
   campaign: string | null;
   deviceCategory: string | null;
+  newVsReturning: string | null;
   sessions: string | null;
   totalUsers: string | null;
   newUsers: string | null;
@@ -55,7 +56,6 @@ export interface GA4EcommerceEventRow {
   revenue: string | null;
   addToCarts: string | null;
   checkouts: string | null;
-  viewItemEvents: string | null;
 }
 
 export interface GA4ProductDataRow {

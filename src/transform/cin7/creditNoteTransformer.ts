@@ -48,7 +48,7 @@ export function transformCreditNote(raw: Cin7CreditNote, syncedAt: Date): Credit
     account: raw.account ?? null,
     creditDate: raw.creditDate ? new Date(raw.creditDate) : null,
     srcCreatedAt: raw.createdDate ? new Date(raw.createdDate) : null,
-    srcModifiedAt: raw.updatedDate ? new Date(raw.updatedDate) : null,
+    srcModifiedAt: raw.modifiedDate ? new Date(raw.modifiedDate) : null,
     rawData: raw,
     syncedAt,
   };

@@ -32,7 +32,7 @@ new Worker(
   SHOPIFY_QUEUE,
   async (job) => {
     const startedAt = Date.now();
-    logger.info({ platform: SHOPIFY_PLATFORM, job: job.name }, 'job started');
+    logger.info({ platform: SHOPIFY_PLATFORM, jobName: job.name }, 'job started');
     const queuedId = await logQueued(SHOPIFY_PLATFORM, job.name);
     const syncLog = await logRunning(queuedId);
 

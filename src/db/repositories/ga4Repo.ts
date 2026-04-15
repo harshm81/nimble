@@ -14,6 +14,7 @@ export interface SessionInput {
   newUsers: number;
   pageViews: number;
   engagementSeconds: number;
+  newVsReturning: string | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -25,10 +26,9 @@ export interface EcommerceEventInput {
   source: string;
   medium: string;
   transactions: number;
-  revenue: number;
+  revenue: Prisma.Decimal;
   addToCarts: number;
   checkouts: number;
-  viewItemEvents: number;
   rawData: object;
   syncedAt: Date;
 }
@@ -45,7 +45,7 @@ export interface ProductDataInput {
   itemViews: number;
   addToCarts: number;
   purchases: number;
-  revenue: number;
+  revenue: Prisma.Decimal;
   rawData: object;
   syncedAt: Date;
 }
@@ -59,14 +59,14 @@ export async function upsertSessions(rows: SessionInput[]): Promise<number> {
     const values = batch.map((r) => Prisma.sql`
       (${r.propertyId}, ${r.reportDate}, ${r.source}, ${r.medium}, ${r.campaign}, ${r.deviceCategory},
        ${r.sessions}, ${r.totalUsers}, ${r.newUsers}, ${r.pageViews}, ${r.engagementSeconds},
-       ${JSON.stringify(r.rawData)}, ${r.syncedAt})
+       ${r.newVsReturning}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})
     `);
 
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO ga4_sessions
       (property_id, report_date, source, medium, campaign, device_category,
        sessions, total_users, new_users, page_views, engagement_seconds,
-       raw_data, synced_at)
+       new_vs_returning, raw_data, synced_at)
       VALUES ${Prisma.join(values)}
       ON DUPLICATE KEY UPDATE
         sessions = VALUES(sessions),
@@ -74,6 +74,7 @@ export async function upsertSessions(rows: SessionInput[]): Promise<number> {
         new_users = VALUES(new_users),
         page_views = VALUES(page_views),
         engagement_seconds = VALUES(engagement_seconds),
+        new_vs_returning = VALUES(new_vs_returning),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `);
@@ -92,14 +93,14 @@ export async function upsertEcommerceEvents(rows: EcommerceEventInput[]): Promis
   for (const batch of chunk(rows, 200)) {
     const values = batch.map((r) => Prisma.sql`
       (${r.propertyId}, ${r.reportDate}, ${r.eventName}, ${r.source}, ${r.medium},
-       ${r.transactions}, ${r.revenue}, ${r.addToCarts}, ${r.checkouts}, ${r.viewItemEvents},
+       ${r.transactions}, ${r.revenue}, ${r.addToCarts}, ${r.checkouts},
        ${JSON.stringify(r.rawData)}, ${r.syncedAt})
     `);
 
     await prisma.$executeRaw(Prisma.sql`
       INSERT INTO ga4_ecommerce_events
       (property_id, report_date, event_name, source, medium,
-       transactions, revenue, add_to_carts, checkouts, view_item_events,
+       transactions, revenue, add_to_carts, checkouts,
        raw_data, synced_at)
       VALUES ${Prisma.join(values)}
       ON DUPLICATE KEY UPDATE
@@ -107,7 +108,6 @@ export async function upsertEcommerceEvents(rows: EcommerceEventInput[]): Promis
         revenue = VALUES(revenue),
         add_to_carts = VALUES(add_to_carts),
         checkouts = VALUES(checkouts),
-        view_item_events = VALUES(view_item_events),
         raw_data = VALUES(raw_data),
         synced_at = VALUES(synced_at)
     `);

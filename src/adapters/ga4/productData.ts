@@ -19,7 +19,7 @@ export async function fetchProductData(date: string): Promise<GA4ProductDataRow[
       { name: 'itemListClicks' },
       { name: 'itemViews' },
       { name: 'addToCarts' },
-      { name: 'itemsPurchased' },
+      { name: 'itemPurchases' },
       { name: 'itemRevenue' },
     ],
     returnPropertyQuota: true,
@@ -37,7 +37,7 @@ export async function fetchProductData(date: string): Promise<GA4ProductDataRow[
     itemListClicks: row['itemListClicks'] || null,
     itemViews:      row['itemViews'] || null,
     addToCarts:     row['addToCarts'] || null,
-    purchases:      row['itemsPurchased'] || null,
+    purchases:      row['itemPurchases'] || null,
     revenue:        row['itemRevenue'] || null,
   }));
 }

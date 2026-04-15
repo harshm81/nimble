@@ -12,11 +12,11 @@ export function transformOrder(raw: Cin7SalesOrder, syncedAt: Date): OrderInput 
     taxTotal: raw.tax ?? null,
     lineItemTotal: raw.subTotal ?? null,
     shippingTotal: raw.shippingCost ?? null,
-    paymentTerms: raw.priceTier ?? null,
+    paymentTerms: raw.paymentTerms ?? null,
     branchId: raw.branchId ?? null,
     currency: raw.currencyCode ?? null,
     srcCreatedAt: raw.createdDate ? new Date(raw.createdDate) : null,
-    srcModifiedAt: raw.updatedDate ? new Date(raw.updatedDate) : null,
+    srcModifiedAt: raw.modifiedDate ? new Date(raw.modifiedDate) : null,
     rawData: raw,
     syncedAt,
   };

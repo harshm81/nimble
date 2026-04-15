@@ -13,6 +13,7 @@ export async function fetchSessions(date: string): Promise<GA4SessionRow[]> {
       { name: 'sessionMedium' },
       { name: 'sessionCampaignName' },
       { name: 'deviceCategory' },
+      { name: 'newVsReturning' },
     ],
     metrics: [
       { name: 'sessions' },
@@ -32,6 +33,7 @@ export async function fetchSessions(date: string): Promise<GA4SessionRow[]> {
     medium:            row['sessionMedium'] || null,
     campaign:          row['sessionCampaignName'] || null,
     deviceCategory:    row['deviceCategory'] || null,
+    newVsReturning:    row['newVsReturning'] || null,
     sessions:          row['sessions'] || null,
     totalUsers:        row['totalUsers'] || null,
     newUsers:          row['newUsers'] || null,

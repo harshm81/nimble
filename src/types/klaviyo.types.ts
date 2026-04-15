@@ -9,7 +9,9 @@ export interface KlaviyoApiResponse<T> {
 export interface KlaviyoCampaignAttributes {
   name: string | null;
   status: string | null;
-  channel: string | null;
+  // channel is on campaign-message, not campaign. fetchCampaigns stamps it here via _channel
+  // after resolving the included campaign-messages relationship.
+  _channel: string | null;
   send_time: string | null;
   created_at: string | null;
   updated_at: string | null;
@@ -17,10 +19,20 @@ export interface KlaviyoCampaignAttributes {
   send_options: unknown | null;
 }
 
+export interface KlaviyoCampaignMessageAttributes {
+  channel: string | null;
+}
+
 export interface KlaviyoCampaign {
   id: string;
   type: string;
   attributes: KlaviyoCampaignAttributes;
+  // campaign-message is an included relationship carrying the channel field
+  relationships: {
+    'campaign-messages': {
+      data: Array<{ id: string; type: string }> | null;
+    } | null;
+  } | null;
 }
 
 // Campaign Stats
@@ -29,13 +41,13 @@ export interface KlaviyoCampaignStatResult {
   campaign_id: string | null;
   delivered: number | null;
   opens: number | null;
-  opens_unique: number | null;
+  unique_opens: number | null;   // API field name — not opens_unique
   open_rate: number | null;
   clicks: number | null;
-  clicks_unique: number | null;
+  unique_clicks: number | null;  // API field name — not clicks_unique
   click_rate: number | null;
   unsubscribes: number | null;
-  bounces: number | null;
+  bounced: number | null;        // API field name — not bounces
   conversions: number | null;
   conversion_rate: number | null;
   conversion_value: number | null;
@@ -82,11 +94,12 @@ export interface KlaviyoProfile {
 // Event
 
 export interface KlaviyoEventAttributes {
-  value: number | null;
+  value: number | null;          // Klaviyo returns numeric — converted to Prisma.Decimal in transformer
   datetime: string | null;
-  metric_name: string | null;
+  metric_name: string | null;    // stamped onto event from included metric resource after fetch
   properties: {
-    $attributed_message?: string | null;
+    $attributed_message?: string | null;  // message ID, not campaign ID
+    $attributed_flow?: string | null;
     [key: string]: unknown;
   } | null;
 }

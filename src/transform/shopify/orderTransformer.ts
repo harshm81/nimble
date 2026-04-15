@@ -33,7 +33,7 @@ export function transformOrderLineItems(
     shopifyLineItemId: li.id,
     name: li.name ?? null,
     sku: li.sku ?? null,
-    quantity: li.quantity ?? 0,
+    quantity: li.quantity ?? null,
     originalUnitPrice: li.originalUnitPriceSet ? parseFloat(li.originalUnitPriceSet.shopMoney.amount) : null,
     discountedUnitPrice: li.discountedUnitPriceSet ? parseFloat(li.discountedUnitPriceSet.shopMoney.amount) : null,
     totalDiscount: li.totalDiscountSet ? parseFloat(li.totalDiscountSet.shopMoney.amount) : null,

@@ -19,16 +19,16 @@ export interface CampaignStatInput {
   delivered: number | null;
   opens: number | null;
   opensUnique: number | null;
-  openRate: number | null;
+  openRate: Prisma.Decimal | null;
   clicks: number | null;
   clicksUnique: number | null;
-  clickRate: number | null;
+  clickRate: Prisma.Decimal | null;
   unsubscribes: number | null;
   bounces: number | null;
   conversions: number | null;
-  conversionRate: number | null;
-  conversionValue: number | null;
-  revenuePerRecipient: number | null;
+  conversionRate: Prisma.Decimal | null;
+  conversionValue: Prisma.Decimal | null;
+  revenuePerRecipient: Prisma.Decimal | null;
   rawData: object;
   syncedAt: Date;
 }
@@ -64,8 +64,8 @@ export interface EventInput {
   metricId:   string | null;
   metricName: string | null;
   profileId:  string | null;
-  campaignId: string | null;
-  value:      number | null;
+  messageId:  string | null;  // $attributed_message — message ID, not campaign ID
+  value:      Prisma.Decimal | null;
   eventDate:  Date | null;
   rawData:    object;
   syncedAt:   Date;
@@ -191,18 +191,18 @@ export async function upsertEvents(rows: EventInput[]): Promise<number> {
     const values = Prisma.join(
       c.map(
         (r) =>
-          Prisma.sql`(${r.klaviyoId}, ${r.metricId}, ${r.metricName}, ${r.profileId}, ${r.campaignId}, ${r.value}, ${r.eventDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`,
+          Prisma.sql`(${r.klaviyoId}, ${r.metricId}, ${r.metricName}, ${r.profileId}, ${r.messageId}, ${r.value}, ${r.eventDate}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`,
       ),
     );
     await prisma.$executeRaw`
       INSERT INTO klaviyo_events
-        (klaviyo_id, metric_id, metric_name, profile_id, campaign_id, value, event_date, raw_data, synced_at)
+        (klaviyo_id, metric_id, metric_name, profile_id, message_id, value, event_date, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         metric_id   = VALUES(metric_id),
         metric_name = VALUES(metric_name),
         profile_id  = VALUES(profile_id),
-        campaign_id = VALUES(campaign_id),
+        message_id  = VALUES(message_id),
         value       = VALUES(value),
         event_date  = VALUES(event_date),
         raw_data    = VALUES(raw_data),

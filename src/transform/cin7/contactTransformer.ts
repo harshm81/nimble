@@ -31,7 +31,7 @@ export function transformContact(raw: Cin7Contact, syncedAt: Date): ContactInput
     group: raw.group ?? null,
     memberSince: raw.memberSince ? new Date(raw.memberSince) : null,
     srcCreatedAt: raw.createdDate ? new Date(raw.createdDate) : null,
-    srcModifiedAt: raw.updatedDate ? new Date(raw.updatedDate) : null,
+    srcModifiedAt: raw.modifiedDate ? new Date(raw.modifiedDate) : null,
     rawData: raw,
     syncedAt,
   };

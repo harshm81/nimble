@@ -58,7 +58,8 @@ new Worker(
             logger.info({ platform: GA4_PLATFORM, date, sessionsSaved, ecommerceSaved, productsSaved }, 'ga4 date synced');
           }
 
-          await setLastSyncedAt(GA4_PLATFORM, job.name, syncedAt);
+          const lastDate = new Date(dates[dates.length - 1] + 'T00:00:00.000Z');
+          await setLastSyncedAt(GA4_PLATFORM, job.name, lastDate);
 
           await logSuccess(syncLog.id, {
             recordsFetched: totalFetched,
@@ -93,24 +94,27 @@ new Worker(
 }
 
 // Returns all dates from the day after lastSyncedAt up to and including yesterday.
-// On first run (lastSyncedAt === null) returns only yesterday — full historical backfill
-// should be triggered manually by clearing the sync_config row.
+// On first run (lastSyncedAt === null): uses GA4_HISTORICAL_START_DATE if set, otherwise 90 days ago.
 function getDateRange(lastSyncedAt: Date | null): string[] {
   const yesterday = new Date();
-  yesterday.setDate(yesterday.getDate() - 1);
-  yesterday.setHours(0, 0, 0, 0);
+  yesterday.setUTCDate(yesterday.getUTCDate() - 1);
+  yesterday.setUTCHours(0, 0, 0, 0);
 
-  const start = lastSyncedAt ? new Date(lastSyncedAt) : new Date(yesterday);
-  start.setHours(0, 0, 0, 0);
+  const start = lastSyncedAt
+    ? new Date(lastSyncedAt)
+    : config.GA4_HISTORICAL_START_DATE
+      ? new Date(config.GA4_HISTORICAL_START_DATE + 'T00:00:00.000Z')
+      : (() => { const d = new Date(); d.setUTCDate(d.getUTCDate() - 90); return d; })();
+  start.setUTCHours(0, 0, 0, 0);
   if (lastSyncedAt) {
-    start.setDate(start.getDate() + 1); // day after last successful sync
+    start.setUTCDate(start.getUTCDate() + 1); // day after last successful sync
   }
 
   const dates: string[] = [];
   const cursor = new Date(start);
   while (cursor <= yesterday) {
     dates.push(cursor.toISOString().split('T')[0]);
-    cursor.setDate(cursor.getDate() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
   return dates;
 }

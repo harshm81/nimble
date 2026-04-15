@@ -45,7 +45,7 @@ new Worker(
 
           const campaignIds = rawCampaigns.map((r) => r.id);
           const now = syncedAt.toISOString();
-          const statsStart = lastSyncedAt ?? (() => { const d = new Date(syncedAt); d.setDate(d.getDate() - 90); return d; })();
+          const statsStart = lastSyncedAt ?? (() => { const d = new Date(syncedAt); d.setUTCDate(d.getUTCDate() - 90); return d; })();
           const rawStats = await fetchCampaignStats(campaignIds, statsStart.toISOString(), now);
           const campaignStats = rawStats.map((r) => transformCampaignStat(r, syncedAt));
 

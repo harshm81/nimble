@@ -23,6 +23,7 @@ const envSchema = z.object({
 
   GA4_PROPERTY_ID: z.string().optional(),
   GOOGLE_SERVICE_ACCOUNT_JSON: z.string().optional(),
+  GA4_HISTORICAL_START_DATE: z.string().optional(),
 
   FACEBOOK_ACCESS_TOKEN: z.string().optional(),
   FACEBOOK_APP_ID: z.string().optional(),
@@ -51,3 +52,28 @@ if (!parsed.success) {
 }
 
 export const config = parsed.data;
+
+if (config.GA4_ENABLED && !config.GA4_PROPERTY_ID) {
+  process.stderr.write('GA4_ENABLED=true but GA4_PROPERTY_ID is not set\n');
+  process.exit(1);
+}
+if (config.GA4_ENABLED && !config.GOOGLE_SERVICE_ACCOUNT_JSON) {
+  process.stderr.write('GA4_ENABLED=true but GOOGLE_SERVICE_ACCOUNT_JSON is not set\n');
+  process.exit(1);
+}
+if (config.KLAVIYO_ENABLED && !config.KLAVIYO_API_KEY) {
+  process.stderr.write('KLAVIYO_ENABLED=true but KLAVIYO_API_KEY is not set\n');
+  process.exit(1);
+}
+if (config.SHOPIFY_ENABLED && !config.SHOPIFY_SHOP_NAME) {
+  process.stderr.write('SHOPIFY_ENABLED=true but SHOPIFY_SHOP_NAME is not set\n');
+  process.exit(1);
+}
+if (config.CIN7_ENABLED && !config.CIN7_API_USERNAME) {
+  process.stderr.write('CIN7_ENABLED=true but CIN7_API_USERNAME is not set\n');
+  process.exit(1);
+}
+if (config.CIN7_ENABLED && !config.CIN7_API_KEY) {
+  process.stderr.write('CIN7_ENABLED=true but CIN7_API_KEY is not set\n');
+  process.exit(1);
+}

@@ -97,6 +97,15 @@ export interface ProductInput {
   option2Name: string | null;
   option3Name: string | null;
   unitPrice: number | null;
+  unitPriceTier2: number | null;
+  unitPriceTier3: number | null;
+  unitPriceTier4: number | null;
+  unitPriceTier5: number | null;
+  unitPriceTier6: number | null;
+  unitPriceTier7: number | null;
+  unitPriceTier8: number | null;
+  unitPriceTier9: number | null;
+  unitPriceTier10: number | null;
   costPrice: number | null;
   taxRule: string | null;
   accountCode: string | null;
@@ -129,6 +138,11 @@ export interface InventoryInput {
   available: number | null;
   committed: number | null;
   incoming: number | null;
+  weight: number | null;
+  cbm: number | null;
+  height: number | null;
+  width: number | null;
+  depth: number | null;
   binLocation: string | null;
   reorderPoint: number | null;
   reorderQty: number | null;
@@ -428,11 +442,11 @@ export async function upsertProducts(rows: ProductInput[]): Promise<number> {
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.name}, ${r.code}, ${r.barcode}, ${r.category}, ${r.brand}, ${r.supplier}, ${r.supplierId}, ${r.description}, ${r.shortDescription}, ${r.isActive}, ${r.type}, ${r.option1Name}, ${r.option2Name}, ${r.option3Name}, ${r.unitPrice}, ${r.costPrice}, ${r.taxRule}, ${r.accountCode}, ${r.purchaseTaxRule}, ${r.purchaseAccountCode}, ${r.weight}, ${r.cbm}, ${r.height}, ${r.width}, ${r.depth}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.name}, ${r.code}, ${r.barcode}, ${r.category}, ${r.brand}, ${r.supplier}, ${r.supplierId}, ${r.description}, ${r.shortDescription}, ${r.isActive}, ${r.type}, ${r.option1Name}, ${r.option2Name}, ${r.option3Name}, ${r.unitPrice}, ${r.unitPriceTier2}, ${r.unitPriceTier3}, ${r.unitPriceTier4}, ${r.unitPriceTier5}, ${r.unitPriceTier6}, ${r.unitPriceTier7}, ${r.unitPriceTier8}, ${r.unitPriceTier9}, ${r.unitPriceTier10}, ${r.costPrice}, ${r.taxRule}, ${r.accountCode}, ${r.purchaseTaxRule}, ${r.purchaseAccountCode}, ${r.weight}, ${r.cbm}, ${r.height}, ${r.width}, ${r.depth}, ${r.srcCreatedAt}, ${r.srcModifiedAt}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_products (cin7_id, name, code, barcode, category, brand, supplier, supplier_id, description, short_description, is_active, type, option1_name, option2_name, option3_name, unit_price, cost_price, tax_rule, account_code, purchase_tax_rule, purchase_account_code, weight, cbm, height, width, depth, src_created_at, src_modified_at, raw_data, synced_at)
+      INSERT INTO cin7_products (cin7_id, name, code, barcode, category, brand, supplier, supplier_id, description, short_description, is_active, type, option1_name, option2_name, option3_name, unit_price, unit_price_tier2, unit_price_tier3, unit_price_tier4, unit_price_tier5, unit_price_tier6, unit_price_tier7, unit_price_tier8, unit_price_tier9, unit_price_tier10, cost_price, tax_rule, account_code, purchase_tax_rule, purchase_account_code, weight, cbm, height, width, depth, src_created_at, src_modified_at, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         name = VALUES(name),
@@ -450,6 +464,15 @@ export async function upsertProducts(rows: ProductInput[]): Promise<number> {
         option2_name = VALUES(option2_name),
         option3_name = VALUES(option3_name),
         unit_price = VALUES(unit_price),
+        unit_price_tier2 = VALUES(unit_price_tier2),
+        unit_price_tier3 = VALUES(unit_price_tier3),
+        unit_price_tier4 = VALUES(unit_price_tier4),
+        unit_price_tier5 = VALUES(unit_price_tier5),
+        unit_price_tier6 = VALUES(unit_price_tier6),
+        unit_price_tier7 = VALUES(unit_price_tier7),
+        unit_price_tier8 = VALUES(unit_price_tier8),
+        unit_price_tier9 = VALUES(unit_price_tier9),
+        unit_price_tier10 = VALUES(unit_price_tier10),
         cost_price = VALUES(cost_price),
         tax_rule = VALUES(tax_rule),
         account_code = VALUES(account_code),
@@ -476,11 +499,11 @@ export async function upsertInventory(rows: InventoryInput[]): Promise<number> {
   for (const c of chunk(rows, 200)) {
     const values = Prisma.join(
       c.map((r) =>
-        Prisma.sql`(${r.cin7Id}, ${r.productId}, ${r.branchId}, ${r.code}, ${r.name}, ${r.barcode}, ${r.option1}, ${r.option2}, ${r.option3}, ${r.styleCode}, ${r.isActive}, ${r.stockOnHand}, ${r.available}, ${r.committed}, ${r.incoming}, ${r.binLocation}, ${r.reorderPoint}, ${r.reorderQty}, ${r.costPrice}, ${r.unitPrice}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
+        Prisma.sql`(${r.cin7Id}, ${r.productId}, ${r.branchId}, ${r.code}, ${r.name}, ${r.barcode}, ${r.option1}, ${r.option2}, ${r.option3}, ${r.styleCode}, ${r.isActive}, ${r.stockOnHand}, ${r.available}, ${r.committed}, ${r.incoming}, ${r.weight}, ${r.cbm}, ${r.height}, ${r.width}, ${r.depth}, ${r.binLocation}, ${r.reorderPoint}, ${r.reorderQty}, ${r.costPrice}, ${r.unitPrice}, ${JSON.stringify(r.rawData)}, ${r.syncedAt})`
       )
     );
     await prisma.$executeRaw`
-      INSERT INTO cin7_inventory (cin7_id, product_id, branch_id, code, name, barcode, option1, option2, option3, style_code, is_active, stock_on_hand, available, committed, incoming, bin_location, reorder_point, reorder_qty, cost_price, unit_price, raw_data, synced_at)
+      INSERT INTO cin7_inventory (cin7_id, product_id, branch_id, code, name, barcode, option1, option2, option3, style_code, is_active, stock_on_hand, available, committed, incoming, weight, cbm, height, width, depth, bin_location, reorder_point, reorder_qty, cost_price, unit_price, raw_data, synced_at)
       VALUES ${values}
       ON DUPLICATE KEY UPDATE
         product_id = VALUES(product_id),
@@ -497,6 +520,11 @@ export async function upsertInventory(rows: InventoryInput[]): Promise<number> {
         available = VALUES(available),
         committed = VALUES(committed),
         incoming = VALUES(incoming),
+        weight = VALUES(weight),
+        cbm = VALUES(cbm),
+        height = VALUES(height),
+        width = VALUES(width),
+        depth = VALUES(depth),
         bin_location = VALUES(bin_location),
         reorder_point = VALUES(reorder_point),
         reorder_qty = VALUES(reorder_qty),
