@@ -13,30 +13,39 @@ async function getPage(url: string, params?: Record<string, string | number>): P
 
 function toRelativePath(fullUrl: string): string {
   const parsed = new URL(fullUrl);
-  return parsed.pathname + parsed.search;
+  // Klaviyo links.next returns full paths like /api/profiles?...
+  // baseURL is already https://a.klaviyo.com/api — strip the leading /api to avoid /api/api/...
+  const path = parsed.pathname.replace(/^\/api/, '');
+  return path + parsed.search;
 }
 
-export async function fetchProfiles(lastSyncedAt: Date | null): Promise<KlaviyoProfile[]> {
-  const results: KlaviyoProfile[] = [];
-
-  const params: Record<string, string | number> = {
-    'page[size]': 100,
+export async function fetchProfiles(
+  lastSyncedAt: Date | null,
+  onPage: (page: KlaviyoProfile[]) => Promise<void>,
+): Promise<void> {
+  // page[size] not supported in revision 2026-04-15 — cursor-only pagination
+  const params: Record<string, string> = {
     'additional-fields[profile]': 'subscriptions',
     ...(lastSyncedAt && { filter: `greater-than(updated,${lastSyncedAt.toISOString()})` }),
   };
 
   let nextUrl: string | null = null;
+  let totalCount = 0;
 
   do {
     const response = await getPage(nextUrl ? toRelativePath(nextUrl) : '/profiles', nextUrl ? undefined : params);
-    results.push(...response.data.data);
+    const page = response.data.data;
+
+    if (page.length > 0) {
+      await onPage(page);
+      totalCount += page.length;
+    }
+
     nextUrl = response.data.links?.next ?? null;
   } while (nextUrl);
 
   logger.info(
-    { platform: KLAVIYO_PLATFORM, module: 'profiles', count: results.length },
+    { platform: KLAVIYO_PLATFORM, module: 'profiles', count: totalCount },
     'fetched',
   );
-
-  return results;
 }

@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `facebook_ad_insights` ADD COLUMN `frequency` DECIMAL(8, 4) NULL;

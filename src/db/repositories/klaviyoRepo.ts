@@ -85,6 +85,13 @@ export interface FlowInput {
   syncedAt: Date;
 }
 
+export async function getAllKlaviyoCampaignIds(): Promise<string[]> {
+  const rows = await prisma.$queryRaw<{ klaviyo_id: string }[]>`
+    SELECT klaviyo_id FROM klaviyo_campaigns
+  `;
+  return rows.map((r) => r.klaviyo_id);
+}
+
 export async function upsertCampaigns(rows: CampaignInput[]): Promise<number> {
   let total = 0;
   for (const c of chunk(rows, 200)) {

@@ -1,5 +1,6 @@
 import { Worker } from 'bullmq';
 import { connection } from '../queue/connection';
+import { klaviyoQueue } from '../queue/queues';
 import { KLAVIYO_PLATFORM, KLAVIYO_QUEUE, KLAVIYO_JOBS } from '../constants/klaviyo';
 import { fetchCampaigns } from '../adapters/klaviyo/campaigns';
 import { fetchCampaignStats } from '../adapters/klaviyo/campaignStats';
@@ -12,6 +13,7 @@ import { transformProfile } from '../transform/klaviyo/profileTransformer';
 import { transformEvent } from '../transform/klaviyo/eventTransformer';
 import { transformFlow } from '../transform/klaviyo/flowTransformer';
 import {
+  getAllKlaviyoCampaignIds,
   upsertCampaigns,
   upsertCampaignStats,
   upsertProfiles,
@@ -40,27 +42,70 @@ new Worker(
 
       switch (job.name) {
         case KLAVIYO_JOBS.CAMPAIGNS: {
-          const rawCampaigns = await fetchCampaigns(lastSyncedAt);
-          const campaigns = rawCampaigns.map((r) => transformCampaign(r, syncedAt));
+          logger.debug(
+            { platform: KLAVIYO_PLATFORM, job: job.name, lastSyncedAt },
+            'starting campaigns fetch',
+          );
 
-          const campaignIds = rawCampaigns.map((r) => r.id);
-          const now = syncedAt.toISOString();
-          const statsStart = lastSyncedAt ?? (() => { const d = new Date(syncedAt); d.setUTCDate(d.getUTCDate() - 90); return d; })();
-          const rawStats = await fetchCampaignStats(campaignIds, statsStart.toISOString(), now);
-          const campaignStats = rawStats.map((r) => transformCampaignStat(r, syncedAt));
+          let recordsFetched = 0;
+          let campaignsSaved = 0;
+          let latestModified: Date | null = null;
 
-          const campaignsSaved = await upsertCampaigns(campaigns);
-          const statsSaved = await upsertCampaignStats(campaignStats);
-          const latestModified = rawCampaigns.reduce<Date | null>((max, r) => {
-            const ts = r.attributes.updated_at;
-            if (!ts) return max;
-            const d = new Date(ts);
-            return max === null || d > max ? d : max;
-          }, null);
+          // Incremental upsert — only campaigns modified since last run
+          await fetchCampaigns(lastSyncedAt, async (page) => {
+            const rows = page.map((r) => transformCampaign(r, syncedAt));
+            campaignsSaved += await upsertCampaigns(rows);
+            recordsFetched += page.length;
+            for (const r of page) {
+              const ts = r.attributes.updated_at;
+              if (!ts) continue;
+              const d = new Date(ts);
+              if (latestModified === null || d > latestModified) latestModified = d;
+            }
+          });
+
           await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: rawCampaigns.length,
-            recordsSaved: campaignsSaved + statsSaved,
+            recordsFetched,
+            recordsSaved: campaignsSaved,
+            recordsSkipped: 0,
+            durationMs: Date.now() - startedAt,
+          });
+
+          // Trigger child job after logSuccess — enqueues stats independently so a stats
+          // failure does not force campaigns to re-fetch
+          await klaviyoQueue.add(KLAVIYO_JOBS.CAMPAIGN_STATS, {}, {
+            jobId: `${KLAVIYO_JOBS.CAMPAIGN_STATS}:${Date.now()}`,
+          });
+          break;
+        }
+
+        case KLAVIYO_JOBS.CAMPAIGN_STATS: {
+          // Read all campaign IDs from DB — no extra Klaviyo API call, no rate limit risk.
+          // Stats (opens, clicks) accumulate on old campaigns even when the campaign record
+          // itself hasn't changed, so we always fetch stats for every campaign ever synced.
+          const allCampaignIds = await getAllKlaviyoCampaignIds();
+
+          // Fixed 90-day lookback — not lastSyncedAt — because stats accumulate over time
+          // and must be re-fetched on every run to stay current.
+          const now = syncedAt.toISOString();
+          const statsStart = new Date(syncedAt);
+          statsStart.setUTCDate(statsStart.getUTCDate() - 90);
+
+          let statsSaved = 0;
+
+          // Upsert per batch — stats appear in DB after each 100-campaign batch (~35s apart).
+          // If the job fails mid-way, already-upserted batches persist and retry re-upserts
+          // them safely via ON DUPLICATE KEY UPDATE.
+          await fetchCampaignStats(allCampaignIds, statsStart.toISOString(), now, async (batch) => {
+            const rows = batch.map((r) => transformCampaignStat(r, syncedAt));
+            statsSaved += await upsertCampaignStats(rows);
+          });
+
+          await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, syncedAt);
+          await logSuccess(syncLog.id, {
+            recordsFetched: allCampaignIds.length,
+            recordsSaved: statsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
           });
@@ -68,18 +113,26 @@ new Worker(
         }
 
         case KLAVIYO_JOBS.PROFILES: {
-          const raw = await fetchProfiles(lastSyncedAt);
-          const rows = raw.map((r) => transformProfile(r, syncedAt));
-          const recordsSaved = await upsertProfiles(rows);
-          const latestModified = raw.reduce<Date | null>((max, r) => {
-            const ts = r.attributes.updated;
-            if (!ts) return max;
-            const d = new Date(ts);
-            return max === null || d > max ? d : max;
-          }, null);
+          let recordsFetched = 0;
+          let recordsSaved   = 0;
+          let latestModified: Date | null = null;
+
+          await fetchProfiles(lastSyncedAt, async (page) => {
+            const rows = page.map((r) => transformProfile(r, syncedAt));
+            const saved = await upsertProfiles(rows);
+            recordsFetched += page.length;
+            recordsSaved   += saved;
+            for (const r of page) {
+              const ts = r.attributes.updated;
+              if (!ts) continue;
+              const d = new Date(ts);
+              if (latestModified === null || d > latestModified) latestModified = d;
+            }
+          });
+
           await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: raw.length,
+            recordsFetched,
             recordsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
@@ -89,12 +142,19 @@ new Worker(
 
         case KLAVIYO_JOBS.EVENTS: {
           // Events are filtered by datetime, not updatedAt — use syncedAt as cursor
-          const raw = await fetchEvents(lastSyncedAt);
-          const rows = raw.map((r) => transformEvent(r, syncedAt));
-          const recordsSaved = await upsertEvents(rows);
+          let recordsFetched = 0;
+          let recordsSaved   = 0;
+
+          await fetchEvents(lastSyncedAt, async (page) => {
+            const rows = page.map((r) => transformEvent(r, syncedAt));
+            const saved = await upsertEvents(rows);
+            recordsFetched += page.length;
+            recordsSaved   += saved;
+          });
+
           await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: raw.length,
+            recordsFetched,
             recordsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
@@ -103,18 +163,25 @@ new Worker(
         }
 
         case KLAVIYO_JOBS.FLOWS: {
-          const raw = await fetchFlows(lastSyncedAt);
-          const rows = raw.map((r) => transformFlow(r, syncedAt));
-          const recordsSaved = await upsertFlows(rows);
-          const latestModified = raw.reduce<Date | null>((max, r) => {
-            const ts = r.attributes.updated;
-            if (!ts) return max;
-            const d = new Date(ts);
-            return max === null || d > max ? d : max;
-          }, null);
+          let recordsFetched = 0;
+          let recordsSaved   = 0;
+          let latestModified: Date | null = null;
+
+          await fetchFlows(lastSyncedAt, async (page) => {
+            const rows = page.map((r) => transformFlow(r, syncedAt));
+            recordsSaved   += await upsertFlows(rows);
+            recordsFetched += page.length;
+            for (const r of page) {
+              const ts = r.attributes.updated;
+              if (!ts) continue;
+              const d = new Date(ts);
+              if (latestModified === null || d > latestModified) latestModified = d;
+            }
+          });
+
           await setLastSyncedAt(KLAVIYO_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: raw.length,
+            recordsFetched,
             recordsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
@@ -136,7 +203,8 @@ new Worker(
   },
   {
     connection,
-    concurrency: 1, // campaign-values-reports is 2 req/min — never run two Klaviyo jobs in parallel
+    concurrency: 1,    // campaign-values-reports is 2 req/min — never run two Klaviyo jobs in parallel
+    lockDuration: 600000, // 10 min — campaign-stats sleeps 35s between batches, exceeds default 30s lock
     limiter: { max: 3, duration: 1000 },
   },
 );

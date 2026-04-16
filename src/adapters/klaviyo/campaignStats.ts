@@ -10,7 +10,8 @@ import { klaviyoClient } from './klaviyoClient';
 // 35 seconds between batches keeps us safely under 2/min.
 const CAMPAIGN_STATS_INTER_BATCH_DELAY_MS = 35_000;
 
-const STATS_FIELDS = [
+// Stats that don't require a conversion metric — always safe to request
+const BASE_STATS_FIELDS = [
   'delivered',
   'opens',
   'opens_unique',
@@ -19,7 +20,11 @@ const STATS_FIELDS = [
   'clicks_unique',
   'click_rate',
   'unsubscribes',
-  'bounces',
+  'bounced',           // revision 2026-04-15: 'bounces' is invalid — correct name is 'bounced'
+] as const;
+
+// Stats that require conversion_metric_id — only requested when the metric ID is configured
+const CONVERSION_STATS_FIELDS = [
   'conversions',
   'conversion_rate',
   'conversion_value',
@@ -30,42 +35,61 @@ export async function fetchCampaignStats(
   campaignIds: string[],
   startDate: string,
   endDate: string,
-): Promise<KlaviyoCampaignStatResult[]> {
+  onBatch: (results: KlaviyoCampaignStatResult[]) => Promise<void>,
+): Promise<void> {
   if (campaignIds.length === 0) {
-    return [];
+    return;
   }
 
-  const allResults: KlaviyoCampaignStatResult[] = [];
-
+  let totalFetched = 0;
   const batches = chunk(campaignIds, 100);
+
   for (let i = 0; i < batches.length; i++) {
     if (i > 0) {
       // campaign-values-reports is limited to 2 req/min — wait between batches
       await sleep(CAMPAIGN_STATS_INTER_BATCH_DELAY_MS);
     }
 
-    const response = await klaviyoClient.post<{ results: KlaviyoCampaignStatResult[] }>(
+    // revision 2026-04-15: campaign_ids field removed — filter by campaign_id using contains-any
+    const ids = JSON.stringify(batches[i]);
+    const conversionMetricId = config.KLAVIYO_CONVERSION_METRIC_ID;
+    const statistics = conversionMetricId
+      ? [...BASE_STATS_FIELDS, ...CONVERSION_STATS_FIELDS]
+      : [...BASE_STATS_FIELDS];
+
+    // revision 2026-04-15: response shape is data.attributes.results (not top-level results)
+    // conversion_metric_id is required (non-nullable) — only include it when configured
+    const response = await klaviyoClient.post<{ data: { attributes: { results: KlaviyoCampaignStatResult[] } } }>(
       '/campaign-values-reports/',
       {
         data: {
           type: 'campaign-values-report',
           attributes: {
             timeframe: { start: startDate, end: endDate },
-            campaign_ids: batches[i],
-            conversion_metric_id: config.KLAVIYO_CONVERSION_METRIC_ID ?? null,
-            statistics: STATS_FIELDS,
+            filter: `contains-any(campaign_id,${ids})`,
+            ...(conversionMetricId && { conversion_metric_id: conversionMetricId }),
+            statistics,
           },
         },
       },
     );
 
-    allResults.push(...(response.data.results ?? []));
+    const results = response.data.data.attributes.results ?? [];
+    totalFetched += results.length;
+
+    // Upsert each batch immediately — don't accumulate all results in memory.
+    // ON DUPLICATE KEY UPDATE makes this idempotent: if the job fails at batch N,
+    // batches 1..(N-1) are already persisted and the retry re-upserts them safely.
+    await onBatch(results);
+
+    logger.debug(
+      { platform: KLAVIYO_PLATFORM, module: 'campaignStats', batch: i + 1, total: batches.length, batchCount: results.length },
+      'batch upserted',
+    );
   }
 
   logger.info(
-    { platform: KLAVIYO_PLATFORM, module: 'campaignStats', count: allResults.length },
+    { platform: KLAVIYO_PLATFORM, module: 'campaignStats', count: totalFetched },
     'fetched',
   );
-
-  return allResults;
 }

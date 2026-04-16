@@ -63,20 +63,25 @@ const campaign: KlaviyoCampaign = {
 };
 
 const campaignStat: KlaviyoCampaignStatResult = {
-  campaign_id:           CAMPAIGN_ID,
-  delivered:             5000,
-  opens:                 1800,
-  unique_opens:          1500,
-  open_rate:             0.3,
-  clicks:                620,
-  unique_clicks:         540,
-  click_rate:            0.108,
-  unsubscribes:          12,
-  bounced:               38,
-  conversions:           87,
-  conversion_rate:       0.0174,
-  conversion_value:      4321.50,
-  revenue_per_recipient: 0.8643,
+  groupings: {
+    campaign_id:  CAMPAIGN_ID,
+    send_channel: 'email',
+  },
+  statistics: {
+    delivered:             5000,
+    opens:                 1800,
+    opens_unique:          1500,
+    open_rate:             0.3,
+    clicks:                620,
+    clicks_unique:         540,
+    click_rate:            0.108,
+    unsubscribes:          12,
+    bounced:               38,
+    conversions:           87,
+    conversion_rate:       0.0174,
+    conversion_value:      4321.50,
+    revenue_per_recipient: 0.8643,
+  },
 };
 
 const profile1: KlaviyoProfile = {

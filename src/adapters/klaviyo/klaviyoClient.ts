@@ -11,6 +11,14 @@ export const klaviyoClient = axios.create({
     revision: KLAVIYO_API_REVISION,
     'Content-Type': 'application/json',
   },
+  // Axios v1.x default serializer converts `page[size]` → `page_size`, which Klaviyo rejects.
+  // URLSearchParams preserves bracket notation verbatim: page[size]=50
+  // Axios v1.x requires { serialize: fn } — a bare function is silently ignored.
+  paramsSerializer: {
+    serialize: (params: Record<string, unknown>) => new URLSearchParams(
+      Object.entries(params).map(([k, v]) => [k, String(v)])
+    ).toString(),
+  },
 });
 
 klaviyoClient.interceptors.response.use(
@@ -49,6 +57,18 @@ klaviyoClient.interceptors.response.use(
         'Klaviyo auth failed — check KLAVIYO_API_KEY',
       );
     }
+
+    // Log the full Klaviyo error response body so root cause is visible in logs
+    logger.error(
+      {
+        platform: KLAVIYO_PLATFORM,
+        status,
+        url: error.config?.url,
+        params: error.config?.params,
+        responseBody: error.response?.data,
+      },
+      'Klaviyo API error',
+    );
 
     throw error;
   },

@@ -20,7 +20,11 @@ export interface KlaviyoCampaignAttributes {
 }
 
 export interface KlaviyoCampaignMessageAttributes {
-  channel: string | null;
+  // As of revision 2026-04-15, channel moved from a top-level attribute to
+  // definition.channel (discriminator on the EmailMessageDefinition | SMSMessageDefinition union)
+  definition: {
+    channel: string | null;
+  } | null;
 }
 
 export interface KlaviyoCampaign {
@@ -36,22 +40,30 @@ export interface KlaviyoCampaign {
 }
 
 // Campaign Stats
+// revision 2026-04-15: response shape changed — results are now grouped by
+// { groupings: { campaign_id, ... }, statistics: { delivered, opens, ... } }
 
 export interface KlaviyoCampaignStatResult {
-  campaign_id: string | null;
-  delivered: number | null;
-  opens: number | null;
-  unique_opens: number | null;   // API field name — not opens_unique
-  open_rate: number | null;
-  clicks: number | null;
-  unique_clicks: number | null;  // API field name — not clicks_unique
-  click_rate: number | null;
-  unsubscribes: number | null;
-  bounced: number | null;        // API field name — not bounces
-  conversions: number | null;
-  conversion_rate: number | null;
-  conversion_value: number | null;
-  revenue_per_recipient: number | null;
+  groupings: {
+    campaign_id: string | null;
+    send_channel: string | null;
+  };
+  statistics: {
+    delivered: number | null;
+    opens: number | null;
+    opens_unique: number | null;
+    open_rate: number | null;
+    clicks: number | null;
+    clicks_unique: number | null;
+    click_rate: number | null;
+    unsubscribes: number | null;
+    bounced: number | null;
+    // Only present when KLAVIYO_CONVERSION_METRIC_ID is configured
+    conversions?: number | null;
+    conversion_rate?: number | null;
+    conversion_value?: number | null;
+    revenue_per_recipient?: number | null;
+  };
 }
 
 // Profile

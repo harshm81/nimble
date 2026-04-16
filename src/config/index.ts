@@ -77,3 +77,11 @@ if (config.CIN7_ENABLED && !config.CIN7_API_KEY) {
   process.stderr.write('CIN7_ENABLED=true but CIN7_API_KEY is not set\n');
   process.exit(1);
 }
+if (config.FACEBOOK_ENABLED && !config.FACEBOOK_ACCESS_TOKEN) {
+  process.stderr.write('FACEBOOK_ENABLED=true but FACEBOOK_ACCESS_TOKEN is not set\n');
+  process.exit(1);
+}
+if (config.FACEBOOK_ENABLED && !config.FACEBOOK_AD_ACCOUNT_ID) {
+  process.stderr.write('FACEBOOK_ENABLED=true but FACEBOOK_AD_ACCOUNT_ID is not set\n');
+  process.exit(1);
+}

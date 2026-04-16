@@ -1,11 +1,12 @@
 export const KLAVIYO_PLATFORM     = 'klaviyo';
 export const KLAVIYO_QUEUE        = 'klaviyo';
 export const KLAVIYO_BASE_URL     = 'https://a.klaviyo.com/api';
-export const KLAVIYO_API_REVISION = '2026-01-15';
+export const KLAVIYO_API_REVISION = '2026-04-15';
 
 export const KLAVIYO_JOBS = {
-  CAMPAIGNS: 'klaviyo:campaigns',
-  PROFILES:  'klaviyo:profiles',
-  EVENTS:    'klaviyo:events',
-  FLOWS:     'klaviyo:flows',
+  CAMPAIGNS:      'klaviyo:campaigns',
+  CAMPAIGN_STATS: 'klaviyo:campaign-stats',
+  PROFILES:       'klaviyo:profiles',
+  EVENTS:         'klaviyo:events',
+  FLOWS:          'klaviyo:flows',
 } as const;

@@ -79,6 +79,7 @@ export interface FacebookAdInsightRaw {
   impressions:   string | null;
   clicks:        string | null;
   reach:         string | null;
+  frequency:     string | null;
   ctr:           string | null;
   cpc:           string | null;
   cpm:           string | null;

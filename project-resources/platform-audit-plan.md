@@ -324,7 +324,7 @@ These are the only reference URLs used during the audit. No other external sourc
 | 2 | Klaviyo | **7 — Done** | All 11 bugs fixed (BUG-KLV-12 deferred). 53 unit tests + 36 integration tests passing. Seed script at `src/scripts/seedKlaviyoTestData.ts`. |
 | 3 | Shopify | **7 — Done** | All 9 bugs fixed. 5 unit test files + 1 integration test (pipeline) passing. Seed script at `src/scripts/seedShopifyTestData.ts`. |
 | 4 | Cin7 | **7 — Done** | All 7 bugs fixed. 8 unit test files (217 tests) + 1 integration pipeline test passing. Seed script at `src/scripts/seedCin7TestData.ts`. |
-| 5 | Facebook | 1 — Awaiting module list | Not started |
+| 5 | Facebook | **7 — Done** | All 7 bugs fixed. 6 unit test files (120 tests) + 1 integration pipeline test passing. Seed script at `src/scripts/seedFacebookTestData.ts`. |
 
 ### GA4 — Deliverables
 
@@ -368,9 +368,18 @@ These are the only reference URLs used during the audit. No other external sourc
 | Seed script | `src/scripts/seedCin7TestData.ts` |
 | Migration | `prisma/migrations/…add_cin7_price_tiers_and_inventory_dimensions/` |
 
+### Facebook — Deliverables
+
+| Deliverable | Location |
+|---|---|
+| Bug audit | `project-resources/facebook-audit.md` |
+| Unit tests (6 files, 120 tests) | `src/transform/facebook/__tests__/` |
+| Integration test | `src/workers/__tests__/facebookPipeline.test.ts` |
+| Seed script | `src/scripts/seedFacebookTestData.ts` |
+| Migration | `prisma/migrations/…add_facebook_ad_insight_frequency/` |
+
 ---
 
 ## What Happens Next
 
-1. You provide the **Facebook module list** → Phases 1–7 begin for Facebook
-2. Cycle repeats until all platforms are done
+All 5 platforms have been audited and completed.

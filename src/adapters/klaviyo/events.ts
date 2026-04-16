@@ -18,12 +18,19 @@ async function getPage(url: string, params?: Record<string, string | number>): P
 
 function toRelativePath(fullUrl: string): string {
   const parsed = new URL(fullUrl);
-  return parsed.pathname + parsed.search;
+  // Klaviyo links.next returns full paths like /api/events?...
+  // baseURL is already https://a.klaviyo.com/api — strip the leading /api to avoid /api/api/...
+  const path = parsed.pathname.replace(/^\/api/, '');
+  return path + parsed.search;
 }
 
-export async function fetchEvents(lastSyncedAt: Date | null): Promise<KlaviyoEvent[]> {
-  const results: KlaviyoEvent[] = [];
-  // Accumulate metric name lookups across all pages
+export async function fetchEvents(
+  lastSyncedAt: Date | null,
+  onPage: (page: KlaviyoEvent[]) => Promise<void>,
+): Promise<void> {
+  // Metric name lookup map accumulated across ALL pages — Klaviyo only includes a metric
+  // resource on the page where it first appears. Events on later pages reference the same
+  // metric ID, so the map must persist for the full fetch, not just one page.
   const metricNameById = new Map<string, string>();
 
   const filterParts: string[] = [];
@@ -45,41 +52,46 @@ export async function fetchEvents(lastSyncedAt: Date | null): Promise<KlaviyoEve
     filterParts.push(`or(${metricFilter})`);
   }
 
-  const params: Record<string, string | number> = {
-    'page[size]': 200, // API maximum per page
+  // page[size] not supported in revision 2026-04-15 — cursor-only pagination
+  const params: Record<string, string> = {
     include: 'metric',
     ...(filterParts.length === 1 && { filter: filterParts[0] }),
     ...(filterParts.length > 1 && { filter: `and(${filterParts.join(',')})` }),
   };
 
   let nextUrl: string | null = null;
+  let totalCount = 0;
 
   do {
     const response = await getPage(nextUrl ? toRelativePath(nextUrl) : '/events', nextUrl ? undefined : params);
 
-    // Index metric names from included resources on every page
+    // Accumulate metric names from included resources — persists across pages
     for (const metric of response.data.included ?? []) {
       if (metric.attributes.name) {
         metricNameById.set(metric.id, metric.attributes.name);
       }
     }
 
-    results.push(...response.data.data);
+    const page = response.data.data;
+
+    // Stamp metric_name onto each event in this page using the accumulated map
+    for (const event of page) {
+      const metricId = event.relationships?.metric?.data?.id ?? null;
+      if (metricId) {
+        event.attributes.metric_name = metricNameById.get(metricId) ?? null;
+      }
+    }
+
+    if (page.length > 0) {
+      await onPage(page);
+      totalCount += page.length;
+    }
+
     nextUrl = response.data.links?.next ?? null;
   } while (nextUrl);
 
-  // Stamp metric_name onto each event using the accumulated lookup map
-  for (const event of results) {
-    const metricId = event.relationships?.metric?.data?.id ?? null;
-    if (metricId) {
-      event.attributes.metric_name = metricNameById.get(metricId) ?? null;
-    }
-  }
-
   logger.info(
-    { platform: KLAVIYO_PLATFORM, module: 'events', count: results.length },
+    { platform: KLAVIYO_PLATFORM, module: 'events', count: totalCount },
     'fetched',
   );
-
-  return results;
 }

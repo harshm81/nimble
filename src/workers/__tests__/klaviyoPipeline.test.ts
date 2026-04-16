@@ -72,22 +72,27 @@ const campaignFixture: KlaviyoCampaign = {
   },
 };
 
-// BUG-KLV-03/04/05 verified: field names use unique_opens, unique_clicks, bounced.
+// revision 2026-04-15: response shape changed to { groupings: {...}, statistics: {...} }
 const campaignStatFixture: KlaviyoCampaignStatResult = {
-  campaign_id:           CAMPAIGN_ID,
-  delivered:             5000,
-  opens:                 1800,
-  unique_opens:          1500,    // BUG-KLV-03: unique_opens, not opens_unique
-  open_rate:             0.3,
-  clicks:                620,
-  unique_clicks:         540,     // BUG-KLV-04: unique_clicks, not clicks_unique
-  click_rate:            0.108,
-  unsubscribes:          12,
-  bounced:               38,      // BUG-KLV-05: bounced, not bounces
-  conversions:           87,
-  conversion_rate:       0.0174,
-  conversion_value:      4321.50,
-  revenue_per_recipient: 0.8643,
+  groupings: {
+    campaign_id:  CAMPAIGN_ID,
+    send_channel: 'email',
+  },
+  statistics: {
+    delivered:             5000,
+    opens:                 1800,
+    opens_unique:          1500,
+    open_rate:             0.3,
+    clicks:                620,
+    clicks_unique:         540,
+    click_rate:            0.108,
+    unsubscribes:          12,
+    bounced:               38,
+    conversions:           87,
+    conversion_rate:       0.0174,
+    conversion_value:      4321.50,
+    revenue_per_recipient: 0.8643,
+  },
 };
 
 // BUG-KLV-06 verified: subscriptions field populated (requires additional-fields[profile]=subscriptions).

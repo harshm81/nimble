@@ -98,6 +98,7 @@ export interface AdInsightInput {
   impressions:          number;
   clicks:               number;
   reach:                number;
+  frequency:            number | null;
   ctr:                  number | null;
   cpc:                  number | null;
   cpm:                  number | null;
@@ -378,6 +379,7 @@ export async function upsertAdInsights(rows: AdInsightInput[]): Promise<number> 
           ${r.impressions},
           ${r.clicks},
           ${r.reach},
+          ${r.frequency},
           ${r.ctr},
           ${r.cpc},
           ${r.cpm},
@@ -395,7 +397,7 @@ export async function upsertAdInsights(rows: AdInsightInput[]): Promise<number> 
     await prisma.$executeRaw`
       INSERT INTO facebook_ad_insights
         (ad_id, ad_name, adset_id, adset_name, campaign_id, campaign_name, report_date,
-         spend, impressions, clicks, reach, ctr, cpc, cpm, purchases, add_to_carts,
+         spend, impressions, clicks, reach, frequency, ctr, cpc, cpm, purchases, add_to_carts,
          initiate_checkouts, landing_page_views, conversions_json, conversion_values_json,
          raw_data, synced_at)
       VALUES ${values}
@@ -409,6 +411,7 @@ export async function upsertAdInsights(rows: AdInsightInput[]): Promise<number> 
         impressions            = VALUES(impressions),
         clicks                 = VALUES(clicks),
         reach                  = VALUES(reach),
+        frequency              = VALUES(frequency),
         ctr                    = VALUES(ctr),
         cpc                    = VALUES(cpc),
         cpm                    = VALUES(cpm),

@@ -6,25 +6,29 @@ export function transformCampaignStat(
   raw: KlaviyoCampaignStatResult,
   syncedAt: Date,
 ): CampaignStatInput {
-  if (!raw.campaign_id) {
-    throw new Error('transformCampaignStat: missing campaign_id in API response');
+  // revision 2026-04-15: campaign_id moved to groupings.campaign_id
+  const campaignId = raw.groupings?.campaign_id ?? null;
+  if (!campaignId) {
+    throw new Error('transformCampaignStat: missing groupings.campaign_id in API response');
   }
 
+  const s = raw.statistics;
+
   return {
-    klaviyoId:           raw.campaign_id,
-    delivered:           raw.delivered ?? null,
-    opens:               raw.opens ?? null,
-    opensUnique:         raw.unique_opens ?? null,      // API field: unique_opens
-    openRate:            raw.open_rate != null ? new Prisma.Decimal(raw.open_rate) : null,
-    clicks:              raw.clicks ?? null,
-    clicksUnique:        raw.unique_clicks ?? null,     // API field: unique_clicks
-    clickRate:           raw.click_rate != null ? new Prisma.Decimal(raw.click_rate) : null,
-    unsubscribes:        raw.unsubscribes ?? null,
-    bounces:             raw.bounced ?? null,           // API field: bounced
-    conversions:         raw.conversions ?? null,
-    conversionRate:      raw.conversion_rate != null ? new Prisma.Decimal(raw.conversion_rate) : null,
-    conversionValue:     raw.conversion_value != null ? new Prisma.Decimal(raw.conversion_value) : null,
-    revenuePerRecipient: raw.revenue_per_recipient != null ? new Prisma.Decimal(raw.revenue_per_recipient) : null,
+    klaviyoId:           campaignId,
+    delivered:           s.delivered ?? null,
+    opens:               s.opens ?? null,
+    opensUnique:         s.opens_unique ?? null,
+    openRate:            s.open_rate != null ? new Prisma.Decimal(s.open_rate) : null,
+    clicks:              s.clicks ?? null,
+    clicksUnique:        s.clicks_unique ?? null,
+    clickRate:           s.click_rate != null ? new Prisma.Decimal(s.click_rate) : null,
+    unsubscribes:        s.unsubscribes ?? null,
+    bounces:             s.bounced ?? null,
+    conversions:         s.conversions ?? null,
+    conversionRate:      s.conversion_rate != null ? new Prisma.Decimal(s.conversion_rate) : null,
+    conversionValue:     s.conversion_value != null ? new Prisma.Decimal(s.conversion_value) : null,
+    revenuePerRecipient: s.revenue_per_recipient != null ? new Prisma.Decimal(s.revenue_per_recipient) : null,
     rawData:             raw,
     syncedAt,
   };

@@ -14,6 +14,7 @@ export function transformAdInsight(raw: FacebookAdInsightRaw, syncedAt: Date): A
     impressions:          raw.impressions   ? parseInt(raw.impressions, 10) : 0,
     clicks:               raw.clicks        ? parseInt(raw.clicks, 10)      : 0,
     reach:                raw.reach         ? parseInt(raw.reach, 10)       : 0,
+    frequency:            raw.frequency     ? parseFloat(raw.frequency)     : null,
     ctr:                  raw.ctr           ? parseFloat(raw.ctr)           : null,
     cpc:                  raw.cpc           ? parseFloat(raw.cpc)           : null,
     cpm:                  raw.cpm           ? parseFloat(raw.cpm)           : null,

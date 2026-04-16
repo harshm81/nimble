@@ -7,7 +7,7 @@ export async function fetchAdInsights(date: string): Promise<FacebookAdInsightRa
 
   const baseParams: Record<string, string> = {
     level:          'ad',
-    fields:         'ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,spend,impressions,clicks,reach,ctr,cpc,cpm,actions,action_values,date_start',
+    fields:         'ad_id,ad_name,adset_id,adset_name,campaign_id,campaign_name,spend,impressions,clicks,reach,frequency,ctr,cpc,cpm,actions,action_values,date_start',
     time_range:     JSON.stringify({ since: date, until: date }),
     time_increment: '1',
     limit:          '100',
