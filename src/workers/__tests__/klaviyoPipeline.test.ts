@@ -201,7 +201,7 @@ async function runPipeline() {
   const syncedAt = new Date('2026-04-15T03:00:00.000Z');
 
   const campaignRows     = [transformCampaign(campaignFixture, syncedAt)];
-  const campaignStatRows = [transformCampaignStat(campaignStatFixture, syncedAt)];
+  const campaignStatRows = [transformCampaignStat(campaignStatFixture, syncedAt)].filter((r): r is NonNullable<typeof r> => r !== null);
   const profileRows      = [
     transformProfile(profileFixture, syncedAt),
     transformProfile(profileFixture2, syncedAt),

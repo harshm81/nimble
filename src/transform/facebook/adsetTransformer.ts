@@ -2,8 +2,9 @@ import { FacebookAdsetRaw } from '../../types/facebook.types';
 import { AdsetInput } from '../../db/repositories/facebookRepo';
 
 export function transformAdset(raw: FacebookAdsetRaw, syncedAt: Date): AdsetInput {
+  if (!raw.id) throw new Error(`transformAdset: missing id in API response — raw: ${JSON.stringify(raw)}`);
   return {
-    adsetId:        raw.id ?? '',
+    adsetId:        raw.id,
     adsetName:      raw.name ?? null,
     campaignId:     raw.campaign_id ?? null,
     status:         raw.status ?? null,

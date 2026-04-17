@@ -8,7 +8,7 @@ query GetInventory($cursor: String) {
   inventoryItems(first: 250, after: $cursor) {
     nodes {
       id
-      inventoryLevels(first: 1) {
+      inventoryLevels(first: 1) {  # intentional: syncs primary location only — multi-location support is a pending feature
         nodes {
           id available updatedAt
         }
@@ -30,9 +30,10 @@ type InventoryResult = {
   };
 };
 
-export async function fetchInventory(): Promise<ShopifyInventoryLevelNode[]> {
+export async function fetchInventory(
+  onPage: (page: ShopifyInventoryLevelNode[]) => Promise<void>,
+): Promise<void> {
   const client = await createShopifyClient();
-  const results: ShopifyInventoryLevelNode[] = [];
   let cursor: string | null = null;
 
   do {
@@ -43,12 +44,10 @@ export async function fetchInventory(): Promise<ShopifyInventoryLevelNode[]> {
 
     logger.info({ platform: SHOPIFY_PLATFORM, module: 'inventory', fetched: levels.length });
 
-    results.push(...levels);
+    if (levels.length > 0) await onPage(levels);
 
     cursor = result.data.inventoryItems.pageInfo.hasNextPage
       ? result.data.inventoryItems.pageInfo.endCursor
       : null;
   } while (cursor);
-
-  return results;
 }

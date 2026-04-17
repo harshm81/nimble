@@ -1,8 +1,9 @@
 import { Worker } from 'bullmq';
 import { connection } from '../queue/connection';
 import { MAINTENANCE_PLATFORM, MAINTENANCE_QUEUE, MAINTENANCE_JOBS } from '../constants/maintenance';
-import { logQueued, logRunning, logSuccess, logFailure } from '../db/repositories/syncLogRepo';
+import { logQueued, logRunning, logSuccess, logFailure, logStalled } from '../db/repositories/syncLogRepo';
 import { logger } from '../utils/logger';
+import { extractErrorMessage } from '../utils/extractErrorMessage';
 import { writeDailySummary } from '../db/repositories/syncSummaryRepo';
 // import { cleanupOldLogs } from '../db/repositories/syncSummaryRepo';
 
@@ -11,10 +12,10 @@ export const maintenanceWorker = new Worker(
   async (job) => {
     const startedAt = Date.now();
     logger.info({ platform: MAINTENANCE_PLATFORM, job: job.name }, 'job started');
-    const queuedId = await logQueued(MAINTENANCE_PLATFORM, job.name);
-    const syncLog = await logRunning(queuedId);
-
+    let syncLog: { id: bigint } | null = null;
     try {
+      const queuedId = await logQueued(MAINTENANCE_PLATFORM, job.name);
+      syncLog = await logRunning(queuedId);
       switch (job.name) {
         case MAINTENANCE_JOBS.DAILY_SUMMARY: {
           await writeDailySummary(new Date());
@@ -45,13 +46,27 @@ export const maintenanceWorker = new Worker(
           throw new Error(`maintenanceWorker: unknown job name: ${job.name}`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      await logFailure(syncLog.id, {
-        errorMessage,
-        durationMs: Date.now() - startedAt,
-      });
+      if (syncLog) {
+        try {
+          await logFailure(syncLog.id, {
+            errorMessage: extractErrorMessage(error),
+            durationMs: Date.now() - startedAt,
+          });
+        } catch (logErr) {
+          logger.error({ err: logErr }, 'failed to update sync_log on job failure');
+        }
+      }
       throw error;
     }
   },
   { connection, concurrency: 1 },
 );
+
+maintenanceWorker.on('stalled', async (jobId: string, jobName: string) => {
+  try {
+    await logStalled(MAINTENANCE_PLATFORM, jobName);
+    logger.warn({ platform: MAINTENANCE_PLATFORM, jobId, jobName }, 'stalled job marked failed in sync_logs');
+  } catch (err) {
+    logger.error({ platform: MAINTENANCE_PLATFORM, jobId, err }, 'failed to update sync_log for stalled job');
+  }
+});

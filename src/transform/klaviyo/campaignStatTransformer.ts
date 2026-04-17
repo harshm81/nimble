@@ -1,15 +1,19 @@
 import { Prisma } from '@prisma/client';
 import { KlaviyoCampaignStatResult } from '../../types/klaviyo.types';
 import { CampaignStatInput } from '../../db/repositories/klaviyoRepo';
+import { logger } from '../../utils/logger';
 
 export function transformCampaignStat(
   raw: KlaviyoCampaignStatResult,
   syncedAt: Date,
-): CampaignStatInput {
+): CampaignStatInput | null {
   // revision 2026-04-15: campaign_id moved to groupings.campaign_id
   const campaignId = raw.groupings?.campaign_id ?? null;
   if (!campaignId) {
-    throw new Error('transformCampaignStat: missing groupings.campaign_id in API response');
+    // Warn and skip rather than throw — a single missing campaign_id must not abort
+    // the entire 100-campaign batch and lock the job in an infinite retry loop.
+    logger.warn({ raw }, 'transformCampaignStat: missing groupings.campaign_id — record skipped');
+    return null;
   }
 
   const s = raw.statistics;

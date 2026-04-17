@@ -74,6 +74,7 @@ const orderFixture: ShopifyOrderNode = {
   processedAt: '2026-04-10T10:01:00+10:00',
   updatedAt: '2026-04-11T09:00:00+10:00',
   lineItems: {
+    pageInfo: { hasNextPage: false },
     nodes: [
       {
         id: LINE_ITEM_ID,
@@ -111,6 +112,7 @@ const orderFixture2: ShopifyOrderNode = {
   processedAt: null,
   updatedAt: null,
   lineItems: {
+    pageInfo: { hasNextPage: false },
     nodes: [
       {
         id: LINE_ITEM_ID2,

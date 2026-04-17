@@ -12,9 +12,9 @@ export function transformOrder(raw: ShopifyOrderNode, syncedAt: Date): OrderInpu
     customerEmail: raw.email ?? null,
     financialStatus: raw.displayFinancialStatus ?? null,
     fulfillmentStatus: raw.displayFulfillmentStatus ?? null,
-    totalPrice: raw.totalPriceSet ? parseFloat(raw.totalPriceSet.shopMoney.amount) : null,
-    subtotalPrice: raw.subtotalPriceSet ? parseFloat(raw.subtotalPriceSet.shopMoney.amount) : null,
-    totalTax: raw.totalTaxSet ? parseFloat(raw.totalTaxSet.shopMoney.amount) : null,
+    totalPrice: raw.totalPriceSet?.shopMoney ? parseFloat(raw.totalPriceSet.shopMoney.amount) : null,
+    subtotalPrice: raw.subtotalPriceSet?.shopMoney ? parseFloat(raw.subtotalPriceSet.shopMoney.amount) : null,
+    totalTax: raw.totalTaxSet?.shopMoney ? parseFloat(raw.totalTaxSet.shopMoney.amount) : null,
     currency: raw.currencyCode ?? null,
     orderDate: raw.processedAt ? new Date(raw.processedAt) : null,
     srcCreatedAt: raw.createdAt ? new Date(raw.createdAt) : null,
@@ -34,9 +34,9 @@ export function transformOrderLineItems(
     name: li.name ?? null,
     sku: li.sku ?? null,
     quantity: li.quantity ?? null,
-    originalUnitPrice: li.originalUnitPriceSet ? parseFloat(li.originalUnitPriceSet.shopMoney.amount) : null,
-    discountedUnitPrice: li.discountedUnitPriceSet ? parseFloat(li.discountedUnitPriceSet.shopMoney.amount) : null,
-    totalDiscount: li.totalDiscountSet ? parseFloat(li.totalDiscountSet.shopMoney.amount) : null,
+    originalUnitPrice: li.originalUnitPriceSet?.shopMoney ? parseFloat(li.originalUnitPriceSet.shopMoney.amount) : null,
+    discountedUnitPrice: li.discountedUnitPriceSet?.shopMoney ? parseFloat(li.discountedUnitPriceSet.shopMoney.amount) : null,
+    totalDiscount: li.totalDiscountSet?.shopMoney ? parseFloat(li.totalDiscountSet.shopMoney.amount) : null,
     srcModifiedAt: raw.updatedAt ? new Date(raw.updatedAt) : null,
     syncedAt,
   }));
@@ -46,12 +46,12 @@ export function transformRefunds(
   raw: ShopifyOrderNode,
   syncedAt: Date,
 ): RefundInput[] {
-  return raw.refunds.map((r): RefundInput => ({
+  return (raw.refunds ?? []).map((r): RefundInput => ({
     shopifyOrderId: raw.id,
     shopifyRefundId: r.id,
     refundedAt: r.createdAt ? new Date(r.createdAt) : null,
     note: r.note ?? null,
-    totalRefunded: r.totalRefundedSet ? parseFloat(r.totalRefundedSet.shopMoney.amount) : null,
+    totalRefunded: r.totalRefundedSet?.shopMoney ? parseFloat(r.totalRefundedSet.shopMoney.amount) : null,
     syncedAt,
   }));
 }

@@ -54,16 +54,24 @@ shopifyCartWebhookRouter.post(
 
     const syncedAt = new Date();
 
+    const cartId = payload.token ?? payload.id;
+    if (!cartId) {
+      logger.warn({ platform: SHOPIFY_PLATFORM, topic }, 'cart event missing both token and id — ignored');
+      res.status(200).json({ received: true });
+      return;
+    }
+
+    const parsedPrice = payload.total_price != null ? parseFloat(payload.total_price) : NaN;
+    const totalPrice = !isNaN(parsedPrice) ? parsedPrice : null;
+
     try {
       await upsertCartEvent({
-        shopifyCartId: payload.token ?? payload.id,
+        shopifyCartId: cartId,
         eventType,
         customerEmail: payload.email ?? payload.customer?.email ?? null,
         customerId: payload.customer?.id != null ? String(payload.customer.id) : null,
         lineItemsCount: payload.line_items?.length ?? null,
-        totalPrice: payload.total_price !== null && payload.total_price !== undefined
-          ? parseFloat(payload.total_price)
-          : null,
+        totalPrice,
         currency: payload.currency ?? null,
         srcCreatedAt: payload.created_at ? new Date(payload.created_at) : null,
         srcModifiedAt: payload.updated_at ? new Date(payload.updated_at) : null,
@@ -71,7 +79,7 @@ shopifyCartWebhookRouter.post(
         syncedAt,
       });
 
-      logger.info({ platform: SHOPIFY_PLATFORM, topic, cartId: payload.token ?? payload.id }, 'cart event saved');
+      logger.info({ platform: SHOPIFY_PLATFORM, topic, cartId }, 'cart event saved');
       res.status(200).json({ received: true });
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : String(error);

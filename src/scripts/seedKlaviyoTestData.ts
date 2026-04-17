@@ -175,7 +175,8 @@ async function main() {
   logger.info('Seeding Klaviyo test data...');
 
   const campaignsSaved     = await upsertCampaigns([transformCampaign(campaign, syncedAt)]);
-  const campaignStatsSaved = await upsertCampaignStats([transformCampaignStat(campaignStat, syncedAt)]);
+  const campaignStatRow = transformCampaignStat(campaignStat, syncedAt);
+  const campaignStatsSaved = campaignStatRow ? await upsertCampaignStats([campaignStatRow]) : 0;
   const profilesSaved      = await upsertProfiles([
     transformProfile(profile1, syncedAt),
     transformProfile(profile2, syncedAt),

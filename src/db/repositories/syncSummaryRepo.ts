@@ -15,7 +15,7 @@ export async function writeDailySummary(date: Date): Promise<void> {
       SUM(status = 'failed')      AS failure_count,
       SUM(records_fetched)        AS total_records_fetched,
       SUM(records_saved)          AS total_records_saved,
-      SUM(records_failed)         AS total_records_failed,
+      SUM(records_skipped)        AS total_records_failed,
       ROUND(AVG(duration_ms))     AS avg_duration_ms,
       MAX(duration_ms)            AS max_duration_ms
     FROM sync_logs

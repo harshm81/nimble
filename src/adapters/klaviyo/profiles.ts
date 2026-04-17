@@ -23,8 +23,8 @@ export async function fetchProfiles(
   lastSyncedAt: Date | null,
   onPage: (page: KlaviyoProfile[]) => Promise<void>,
 ): Promise<void> {
-  // page[size] not supported in revision 2026-04-15 — cursor-only pagination
   const params: Record<string, string> = {
+    'page[size]': '100',
     'additional-fields[profile]': 'subscriptions',
     ...(lastSyncedAt && { filter: `greater-than(updated,${lastSyncedAt.toISOString()})` }),
   };

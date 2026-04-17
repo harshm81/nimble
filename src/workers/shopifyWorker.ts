@@ -21,42 +21,50 @@ import {
   upsertInventory,
 } from '../db/repositories/shopifyRepo';
 import { getLastSyncedAt, setLastSyncedAt } from '../db/repositories/syncConfigRepo';
-import { logQueued, logRunning, logSuccess, logFailure } from '../db/repositories/syncLogRepo';
+import { logQueued, logRunning, logSuccess, logFailure, logStalled } from '../db/repositories/syncLogRepo';
 import { logger } from '../utils/logger';
+import { extractErrorMessage } from '../utils/extractErrorMessage';
 import { config } from '../config';
 
 if (!config.SHOPIFY_ENABLED) {
   logger.warn({ platform: SHOPIFY_PLATFORM }, 'shopify disabled — worker not started');
 } else {
-new Worker(
+const shopifyWorker = new Worker(
   SHOPIFY_QUEUE,
   async (job) => {
     const startedAt = Date.now();
     logger.info({ platform: SHOPIFY_PLATFORM, jobName: job.name }, 'job started');
-    const queuedId = await logQueued(SHOPIFY_PLATFORM, job.name);
-    const syncLog = await logRunning(queuedId);
-
+    let syncLog: { id: bigint } | null = null;
     try {
+      const queuedId = await logQueued(SHOPIFY_PLATFORM, job.name);
+      syncLog = await logRunning(queuedId);
       const lastSyncedAt = await getLastSyncedAt(SHOPIFY_PLATFORM, job.name);
       const syncedAt = new Date();
 
       switch (job.name) {
         case SHOPIFY_JOBS.ORDERS: {
-          const raw = await fetchOrders(lastSyncedAt);
-          const orders = raw.map((r) => transformOrder(r, syncedAt));
-          const lineItems = raw.flatMap((r) => transformOrderLineItems(r, syncedAt));
-          const refunds = raw.flatMap((r) => transformRefunds(r, syncedAt));
-          const recordsSaved = await upsertOrders(orders);
-          await upsertOrderLineItems(lineItems);
-          await upsertRefunds(refunds);
-          const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedAt) return max;
-            const d = new Date(r.updatedAt);
-            return max === null || d > max ? d : max;
-          }, null);
+          let recordsFetched = 0;
+          let recordsSaved = 0;
+          let latestModified: Date | null = null;
+
+          await fetchOrders(lastSyncedAt, async (page) => {
+            const orders    = page.map((r) => transformOrder(r, syncedAt));
+            const lineItems = page.flatMap((r) => transformOrderLineItems(r, syncedAt));
+            const refunds   = page.flatMap((r) => transformRefunds(r, syncedAt));
+            recordsSaved += await upsertOrders(orders);
+            await upsertOrderLineItems(lineItems);
+            await upsertRefunds(refunds);
+            recordsFetched += page.length;
+            for (const r of page) {
+              if (!r.updatedAt) continue;
+              const d = new Date(r.updatedAt);
+              if (latestModified === null || d > latestModified) latestModified = d;
+            }
+          });
+
           await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: raw.length,
+            recordsFetched,
             recordsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
@@ -65,17 +73,24 @@ new Worker(
         }
 
         case SHOPIFY_JOBS.CUSTOMERS: {
-          const raw = await fetchCustomers(lastSyncedAt);
-          const rows = raw.map((r) => transformCustomer(r, syncedAt));
-          const recordsSaved = await upsertCustomers(rows);
-          const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedAt) return max;
-            const d = new Date(r.updatedAt);
-            return max === null || d > max ? d : max;
-          }, null);
+          let recordsFetched = 0;
+          let recordsSaved = 0;
+          let latestModified: Date | null = null;
+
+          await fetchCustomers(lastSyncedAt, async (page) => {
+            const rows = page.map((r) => transformCustomer(r, syncedAt));
+            recordsSaved += await upsertCustomers(rows);
+            recordsFetched += page.length;
+            for (const r of page) {
+              if (!r.updatedAt) continue;
+              const d = new Date(r.updatedAt);
+              if (latestModified === null || d > latestModified) latestModified = d;
+            }
+          });
+
           await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: raw.length,
+            recordsFetched,
             recordsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
@@ -84,21 +99,28 @@ new Worker(
         }
 
         case SHOPIFY_JOBS.PRODUCTS: {
-          const raw = await fetchProducts(lastSyncedAt);
-          const rows = raw.map((r) => transformProduct(r, syncedAt));
+          let recordsFetched = 0;
+          let recordsSaved = 0;
+          let latestModified: Date | null = null;
+
           // Upsert variants in the same job — products and variants share the same fetch,
           // so no second API call is needed. PRODUCT_VARIANTS job is kept for manual re-runs.
-          const variants = raw.flatMap((r) => transformProductVariants(r, syncedAt));
-          const recordsSaved = await upsertProducts(rows);
-          await upsertProductVariants(variants);
-          const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedAt) return max;
-            const d = new Date(r.updatedAt);
-            return max === null || d > max ? d : max;
-          }, null);
+          await fetchProducts(lastSyncedAt, async (page) => {
+            const rows     = page.map((r) => transformProduct(r, syncedAt));
+            const variants = page.flatMap((r) => transformProductVariants(r, syncedAt));
+            recordsSaved += await upsertProducts(rows);
+            await upsertProductVariants(variants);
+            recordsFetched += page.length;
+            for (const r of page) {
+              if (!r.updatedAt) continue;
+              const d = new Date(r.updatedAt);
+              if (latestModified === null || d > latestModified) latestModified = d;
+            }
+          });
+
           await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: raw.length,
+            recordsFetched,
             recordsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
@@ -112,12 +134,18 @@ new Worker(
 
         case SHOPIFY_JOBS.INVENTORY: {
           // Inventory has no updatedAt — it is a full snapshot each sync
-          const raw = await fetchInventory();
-          const rows = raw.map((r) => transformInventory(r, syncedAt));
-          const recordsSaved = await upsertInventory(rows);
+          let recordsFetched = 0;
+          let recordsSaved = 0;
+
+          await fetchInventory(async (page) => {
+            const rows = page.map((r) => transformInventory(r, syncedAt));
+            recordsSaved += await upsertInventory(rows);
+            recordsFetched += page.length;
+          });
+
           await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: raw.length,
+            recordsFetched,
             recordsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
@@ -129,17 +157,24 @@ new Worker(
           // Standalone re-run path — fetches products again to extract variants.
           // During normal cron sync this case is not reached; variants are upserted
           // inside the PRODUCTS case above to avoid a redundant API call.
-          const raw = await fetchProducts(lastSyncedAt);
-          const variants = raw.flatMap((r) => transformProductVariants(r, syncedAt));
-          const recordsSaved = await upsertProductVariants(variants);
-          const latestModified = raw.reduce<Date | null>((max, r) => {
-            if (!r.updatedAt) return max;
-            const d = new Date(r.updatedAt);
-            return max === null || d > max ? d : max;
-          }, null);
+          let recordsFetched = 0;
+          let recordsSaved = 0;
+          let latestModified: Date | null = null;
+
+          await fetchProducts(lastSyncedAt, async (page) => {
+            const variants = page.flatMap((r) => transformProductVariants(r, syncedAt));
+            recordsSaved += await upsertProductVariants(variants);
+            recordsFetched += variants.length;
+            for (const r of page) {
+              if (!r.updatedAt) continue;
+              const d = new Date(r.updatedAt);
+              if (latestModified === null || d > latestModified) latestModified = d;
+            }
+          });
+
           await setLastSyncedAt(SHOPIFY_PLATFORM, job.name, latestModified ?? syncedAt);
           await logSuccess(syncLog.id, {
-            recordsFetched: variants.length,
+            recordsFetched,
             recordsSaved,
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
@@ -151,18 +186,33 @@ new Worker(
           throw new Error(`shopifyWorker: unknown job name: ${job.name}`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      await logFailure(syncLog.id, {
-        errorMessage,
-        durationMs: Date.now() - startedAt,
-      });
+      if (syncLog) {
+        try {
+          await logFailure(syncLog.id, {
+            errorMessage: extractErrorMessage(error),
+            durationMs: Date.now() - startedAt,
+          });
+        } catch (logErr) {
+          logger.error({ err: logErr }, 'failed to update sync_log on job failure');
+        }
+      }
       throw error;
     }
   },
   {
     connection,
     concurrency: 2,
+    lockDuration: 3600000, // 60 min — orders + products with variants exceed the 30s default on first run
     limiter: { max: 3, duration: 1000 },
   },
 );
+
+shopifyWorker.on('stalled', async (jobId: string, jobName: string) => {
+  try {
+    await logStalled(SHOPIFY_PLATFORM, jobName);
+    logger.warn({ platform: SHOPIFY_PLATFORM, jobId, jobName }, 'stalled job marked failed in sync_logs');
+  } catch (err) {
+    logger.error({ platform: SHOPIFY_PLATFORM, jobId, err }, 'failed to update sync_log for stalled job');
+  }
+});
 }

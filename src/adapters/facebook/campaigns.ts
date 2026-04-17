@@ -3,10 +3,13 @@ import { FACEBOOK_PLATFORM } from '../../constants/facebook';
 import { logger } from '../../utils/logger';
 import { createFacebookClient, facebookGet } from './facebookClient';
 
-export async function fetchCampaigns(lastSyncedAt: Date | null): Promise<FacebookCampaignRaw[]> {
+export async function fetchCampaigns(
+  lastSyncedAt: Date | null,
+  onPage: (page: FacebookCampaignRaw[]) => Promise<void>,
+): Promise<void> {
   const client = createFacebookClient();
-  const results: FacebookCampaignRaw[] = [];
   let after: string | null = null;
+  let totalCount = 0;
 
   const baseParams: Record<string, string> = {
     fields: 'id,name,status,objective,created_time,updated_time',
@@ -32,14 +35,19 @@ export async function fetchCampaigns(lastSyncedAt: Date | null): Promise<Faceboo
       params,
     );
 
-    results.push(...page.data);
-    after = page.paging?.cursors?.after ?? null;
+    if (page.data.length > 0) {
+      await onPage(page.data);
+      totalCount += page.data.length;
+    }
+
+    // paging.next is only present when more pages exist; cursors.after is present on every page including the last
+    after = page.paging?.next ? (page.paging.cursors?.after ?? null) : null;
 
     logger.info(
-      { platform: FACEBOOK_PLATFORM, module: 'campaigns', fetched: page.data.length, total: results.length },
+      { platform: FACEBOOK_PLATFORM, module: 'campaigns', fetched: page.data.length },
       'page fetched',
     );
   } while (after);
 
-  return results;
+  logger.info({ platform: FACEBOOK_PLATFORM, module: 'campaigns', count: totalCount }, 'fetched');
 }

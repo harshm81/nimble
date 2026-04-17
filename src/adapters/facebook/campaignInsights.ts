@@ -25,8 +25,14 @@ export async function fetchCampaignInsights(date: string): Promise<FacebookCampa
     if (!jobId) throw new Error('Facebook async insights job started but report_run_id is missing');
 
     let status = await facebookGet<{ async_status: string; async_percent_completion: number }>(client, `/${jobId}`);
+    let pollAttempts = 0;
+    const MAX_POLL_ATTEMPTS = 120; // 120 × 5s = 10 minutes max
     while (status.async_status === 'Job Running' || status.async_status === 'Job Not Started') {
+      if (pollAttempts >= MAX_POLL_ATTEMPTS) {
+        throw new Error(`Facebook async report job ${jobId} did not complete after ${MAX_POLL_ATTEMPTS * 5}s`);
+      }
       await sleep(5000);
+      pollAttempts++;
       status = await facebookGet<{ async_status: string; async_percent_completion: number }>(client, `/${jobId}`);
     }
 
@@ -47,7 +53,7 @@ export async function fetchCampaignInsights(date: string): Promise<FacebookCampa
       );
 
       results.push(...page.data);
-      after = page.paging?.cursors?.after ?? null;
+      after = page.paging?.next ? (page.paging.cursors?.after ?? null) : null;
     } while (after);
 
     return results;
@@ -61,7 +67,7 @@ export async function fetchCampaignInsights(date: string): Promise<FacebookCampa
 
   do {
     results.push(...currentPage.data);
-    after = currentPage.paging?.cursors?.after ?? null;
+    after = currentPage.paging?.next ? (currentPage.paging.cursors?.after ?? null) : null;
 
     if (after) {
       currentPage = await facebookGet<FacebookListResponse<FacebookCampaignInsightRaw>>(

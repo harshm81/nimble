@@ -50,16 +50,15 @@ export async function registerSchedulers(): Promise<void> {
     );
   }
 
-  // Klaviyo crons commented out for controlled first run — add jobs manually via Bull Board.
-  // Once all 4 jobs have completed successfully once, uncomment and restart.
-  // if (config.KLAVIYO_ENABLED) {
-  //   jobs.push(
-  //     klaviyoQueue.add(KLAVIYO_JOBS.CAMPAIGNS, {}, { repeat: { pattern: '0 5 * * *' },   jobId: KLAVIYO_JOBS.CAMPAIGNS }),
-  //     klaviyoQueue.add(KLAVIYO_JOBS.PROFILES,  {}, { repeat: { pattern: '0 */6 * * *' }, jobId: KLAVIYO_JOBS.PROFILES }),
-  //     klaviyoQueue.add(KLAVIYO_JOBS.EVENTS,    {}, { repeat: { pattern: '40 * * * *' },  jobId: KLAVIYO_JOBS.EVENTS }),
-  //     klaviyoQueue.add(KLAVIYO_JOBS.FLOWS,     {}, { repeat: { pattern: '5 5 * * *' },   jobId: KLAVIYO_JOBS.FLOWS }),
-  //   );
-  // }
+  if (config.KLAVIYO_ENABLED) {
+    jobs.push(
+      klaviyoQueue.add(KLAVIYO_JOBS.FLOWS,           {}, { repeat: { pattern: '5 5 * * *' },   jobId: KLAVIYO_JOBS.FLOWS }),
+      klaviyoQueue.add(KLAVIYO_JOBS.CAMPAIGNS,       {}, { repeat: { pattern: '0 5 * * *' },   jobId: KLAVIYO_JOBS.CAMPAIGNS }),
+      klaviyoQueue.add(KLAVIYO_JOBS.CAMPAIGN_STATS,  {}, { repeat: { pattern: '30 5 * * *' },  jobId: KLAVIYO_JOBS.CAMPAIGN_STATS }),
+      klaviyoQueue.add(KLAVIYO_JOBS.PROFILES,        {}, { repeat: { pattern: '0 */6 * * *' }, jobId: KLAVIYO_JOBS.PROFILES }),
+      klaviyoQueue.add(KLAVIYO_JOBS.EVENTS,          {}, { repeat: { pattern: '40 * * * *' },  jobId: KLAVIYO_JOBS.EVENTS }),
+    );
+  }
 
   // Maintenance — always registered
   jobs.push(

@@ -20,6 +20,7 @@ query GetOrders($cursor: String, $query: String) {
           discountedUnitPriceSet { shopMoney { amount } }
           totalDiscountSet { shopMoney { amount } }
         }
+        pageInfo { hasNextPage }
       }
       refunds {
         id createdAt note
@@ -38,9 +39,11 @@ type OrdersResult = {
   };
 };
 
-export async function fetchOrders(lastSyncedAt: Date | null): Promise<ShopifyOrderNode[]> {
+export async function fetchOrders(
+  lastSyncedAt: Date | null,
+  onPage: (page: ShopifyOrderNode[]) => Promise<void>,
+): Promise<void> {
   const client = await createShopifyClient();
-  const results: ShopifyOrderNode[] = [];
   let cursor: string | null = null;
 
   const queryFilter = lastSyncedAt
@@ -55,10 +58,14 @@ export async function fetchOrders(lastSyncedAt: Date | null): Promise<ShopifyOrd
 
     logger.info({ platform: SHOPIFY_PLATFORM, module: 'orders', fetched: nodes.length });
 
-    results.push(...nodes);
+    for (const node of nodes) {
+      if (node.lineItems.pageInfo.hasNextPage) {
+        logger.warn({ platform: SHOPIFY_PLATFORM, orderId: node.id }, 'order has >250 line items — excess items not synced');
+      }
+    }
+
+    if (nodes.length > 0) await onPage(nodes);
 
     cursor = pageInfo.hasNextPage ? pageInfo.endCursor : null;
   } while (cursor);
-
-  return results;
 }

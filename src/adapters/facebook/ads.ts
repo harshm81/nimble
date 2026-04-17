@@ -3,10 +3,13 @@ import { FACEBOOK_PLATFORM } from '../../constants/facebook';
 import { logger } from '../../utils/logger';
 import { createFacebookClient, facebookGet } from './facebookClient';
 
-export async function fetchAds(lastSyncedAt: Date | null): Promise<FacebookAdRaw[]> {
+export async function fetchAds(
+  lastSyncedAt: Date | null,
+  onPage: (page: FacebookAdRaw[]) => Promise<void>,
+): Promise<void> {
   const client = createFacebookClient();
-  const results: FacebookAdRaw[] = [];
   let after: string | null = null;
+  let totalCount = 0;
 
   const baseParams: Record<string, string> = {
     fields: 'id,name,adset_id,campaign_id,status,created_time,updated_time',
@@ -32,14 +35,18 @@ export async function fetchAds(lastSyncedAt: Date | null): Promise<FacebookAdRaw
       params,
     );
 
-    results.push(...page.data);
-    after = page.paging?.cursors?.after ?? null;
+    if (page.data.length > 0) {
+      await onPage(page.data);
+      totalCount += page.data.length;
+    }
+
+    after = page.paging?.next ? (page.paging.cursors?.after ?? null) : null;
 
     logger.info(
-      { platform: FACEBOOK_PLATFORM, module: 'ads', fetched: page.data.length, total: results.length },
+      { platform: FACEBOOK_PLATFORM, module: 'ads', fetched: page.data.length },
       'page fetched',
     );
   } while (after);
 
-  return results;
+  logger.info({ platform: FACEBOOK_PLATFORM, module: 'ads', count: totalCount }, 'fetched');
 }

@@ -53,3 +53,15 @@ export function logFailure(
     },
   });
 }
+
+// Marks any stuck 'running' entries for a platform as failed.
+// Called from the BullMQ 'stalled' event — the catch block never fires for stalled jobs.
+export function logStalled(platform: string, jobType: string) {
+  return prisma.syncLog.updateMany({
+    where: { platform, jobType, status: 'running' },
+    data: {
+      status: 'failed',
+      errorMessage: 'Job stalled — BullMQ lock expired before completion',
+    },
+  });
+}

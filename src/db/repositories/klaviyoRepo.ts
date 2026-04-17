@@ -92,6 +92,13 @@ export async function getAllKlaviyoCampaignIds(): Promise<string[]> {
   return rows.map((r) => r.klaviyo_id);
 }
 
+export async function getOldestKlaviyoCampaignSendTime(): Promise<Date | null> {
+  const rows = await prisma.$queryRaw<{ min_send_time: Date | null }[]>`
+    SELECT MIN(send_time) AS min_send_time FROM klaviyo_campaigns
+  `;
+  return rows[0]?.min_send_time ?? null;
+}
+
 export async function upsertCampaigns(rows: CampaignInput[]): Promise<number> {
   let total = 0;
   for (const c of chunk(rows, 200)) {

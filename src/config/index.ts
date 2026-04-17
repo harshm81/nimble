@@ -29,6 +29,7 @@ const envSchema = z.object({
   FACEBOOK_APP_ID: z.string().optional(),
   FACEBOOK_APP_SECRET: z.string().optional(),
   FACEBOOK_AD_ACCOUNT_ID: z.string().optional(),
+  FACEBOOK_HISTORICAL_START_DATE: z.string().optional(),
 
   KLAVIYO_API_KEY: z.string().optional(),
   KLAVIYO_CONVERSION_METRIC_ID: z.string().optional(),
@@ -67,6 +68,10 @@ if (config.KLAVIYO_ENABLED && !config.KLAVIYO_API_KEY) {
 }
 if (config.SHOPIFY_ENABLED && !config.SHOPIFY_SHOP_NAME) {
   process.stderr.write('SHOPIFY_ENABLED=true but SHOPIFY_SHOP_NAME is not set\n');
+  process.exit(1);
+}
+if (config.SHOPIFY_ENABLED && !config.SHOPIFY_WEBHOOK_SECRET) {
+  process.stderr.write('SHOPIFY_ENABLED=true but SHOPIFY_WEBHOOK_SECRET is not set\n');
   process.exit(1);
 }
 if (config.CIN7_ENABLED && !config.CIN7_API_USERNAME) {

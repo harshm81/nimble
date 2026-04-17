@@ -3,10 +3,13 @@ import { FACEBOOK_PLATFORM } from '../../constants/facebook';
 import { logger } from '../../utils/logger';
 import { createFacebookClient, facebookGet } from './facebookClient';
 
-export async function fetchAdsets(lastSyncedAt: Date | null): Promise<FacebookAdsetRaw[]> {
+export async function fetchAdsets(
+  lastSyncedAt: Date | null,
+  onPage: (page: FacebookAdsetRaw[]) => Promise<void>,
+): Promise<void> {
   const client = createFacebookClient();
-  const results: FacebookAdsetRaw[] = [];
   let after: string | null = null;
+  let totalCount = 0;
 
   const baseParams: Record<string, string> = {
     fields: 'id,name,campaign_id,status,daily_budget,lifetime_budget,created_time,updated_time',
@@ -32,14 +35,18 @@ export async function fetchAdsets(lastSyncedAt: Date | null): Promise<FacebookAd
       params,
     );
 
-    results.push(...page.data);
-    after = page.paging?.cursors?.after ?? null;
+    if (page.data.length > 0) {
+      await onPage(page.data);
+      totalCount += page.data.length;
+    }
+
+    after = page.paging?.next ? (page.paging.cursors?.after ?? null) : null;
 
     logger.info(
-      { platform: FACEBOOK_PLATFORM, module: 'adsets', fetched: page.data.length, total: results.length },
+      { platform: FACEBOOK_PLATFORM, module: 'adsets', fetched: page.data.length },
       'page fetched',
     );
   } while (after);
 
-  return results;
+  logger.info({ platform: FACEBOOK_PLATFORM, module: 'adsets', count: totalCount }, 'fetched');
 }

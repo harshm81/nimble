@@ -4,10 +4,13 @@ import { logger } from '../../utils/logger';
 import { sleep } from '../../utils/sleep';
 import { CIN7_PLATFORM } from '../../constants/cin7';
 
-export async function fetchPurchaseOrders(lastSyncedAt: Date | null): Promise<Cin7PurchaseOrder[]> {
+export async function fetchPurchaseOrders(
+  lastSyncedAt: Date | null,
+  onPage: (page: Cin7PurchaseOrder[]) => Promise<void>,
+): Promise<void> {
   const rows = 250;
   let page = 1;
-  const results: Cin7PurchaseOrder[] = [];
+  let totalCount = 0;
 
   const where = lastSyncedAt
     ? `modifiedDate >= '${lastSyncedAt.toISOString()}'`
@@ -23,14 +26,10 @@ export async function fetchPurchaseOrders(lastSyncedAt: Date | null): Promise<Ci
       },
     });
 
-    logger.info({
-      platform: CIN7_PLATFORM,
-      module: 'purchaseOrders',
-      page,
-      fetched: data.length,
-    });
-
-    results.push(...data);
+    if (data.length > 0) {
+      await onPage(data);
+      totalCount += data.length;
+    }
 
     if (data.length < rows) break;
 
@@ -38,5 +37,5 @@ export async function fetchPurchaseOrders(lastSyncedAt: Date | null): Promise<Ci
     await sleep(350);
   }
 
-  return results;
+  logger.info({ platform: CIN7_PLATFORM, module: 'purchaseOrders', count: totalCount }, 'fetched');
 }

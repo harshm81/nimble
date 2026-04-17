@@ -55,7 +55,7 @@ export async function createShopifyClient() {
       if (error.response?.status === 429 && cfg) {
         const retryCount = cfg.__retryCount ?? 0;
         if (retryCount < 3) {
-          const retryAfter = parseInt(error.response.headers?.['retry-after'] ?? '10', 10);
+          const retryAfter = parseInt(error.response.headers?.['retry-after'] ?? '10', 10) || 10;
           logger.warn({ platform: SHOPIFY_PLATFORM, retryAfter, retryCount: retryCount + 1 }, 'Shopify 429 — retrying');
           cfg.__retryCount = retryCount + 1;
           await sleep(retryAfter * 1000);

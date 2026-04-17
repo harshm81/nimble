@@ -1,6 +1,5 @@
 import { Worker } from 'bullmq';
 import { connection } from '../queue/connection';
-import { klaviyoQueue } from '../queue/queues';
 import { KLAVIYO_PLATFORM, KLAVIYO_QUEUE, KLAVIYO_JOBS } from '../constants/klaviyo';
 import { fetchCampaigns } from '../adapters/klaviyo/campaigns';
 import { fetchCampaignStats } from '../adapters/klaviyo/campaignStats';
@@ -14,6 +13,7 @@ import { transformEvent } from '../transform/klaviyo/eventTransformer';
 import { transformFlow } from '../transform/klaviyo/flowTransformer';
 import {
   getAllKlaviyoCampaignIds,
+  getOldestKlaviyoCampaignSendTime,
   upsertCampaigns,
   upsertCampaignStats,
   upsertProfiles,
@@ -21,22 +21,23 @@ import {
   upsertFlows,
 } from '../db/repositories/klaviyoRepo';
 import { getLastSyncedAt, setLastSyncedAt } from '../db/repositories/syncConfigRepo';
-import { logQueued, logRunning, logSuccess, logFailure } from '../db/repositories/syncLogRepo';
+import { logQueued, logRunning, logSuccess, logFailure, logStalled } from '../db/repositories/syncLogRepo';
 import { logger } from '../utils/logger';
+import { extractErrorMessage } from '../utils/extractErrorMessage';
 import { config } from '../config';
 
 if (!config.KLAVIYO_ENABLED) {
   logger.warn({ platform: KLAVIYO_PLATFORM }, 'klaviyo disabled — worker not started');
 } else {
-new Worker(
+const klaviyoWorker = new Worker(
   KLAVIYO_QUEUE,
   async (job) => {
     const startedAt = Date.now();
     logger.info({ platform: KLAVIYO_PLATFORM, job: job.name }, 'job started');
-    const queuedId = await logQueued(KLAVIYO_PLATFORM, job.name);
-    const syncLog = await logRunning(queuedId);
-
+    let syncLog: { id: bigint } | null = null;
     try {
+      const queuedId = await logQueued(KLAVIYO_PLATFORM, job.name);
+      syncLog = await logRunning(queuedId);
       const lastSyncedAt = await getLastSyncedAt(KLAVIYO_PLATFORM, job.name);
       const syncedAt = new Date();
 
@@ -71,12 +72,6 @@ new Worker(
             recordsSkipped: 0,
             durationMs: Date.now() - startedAt,
           });
-
-          // Trigger child job after logSuccess — enqueues stats independently so a stats
-          // failure does not force campaigns to re-fetch
-          await klaviyoQueue.add(KLAVIYO_JOBS.CAMPAIGN_STATS, {}, {
-            jobId: `${KLAVIYO_JOBS.CAMPAIGN_STATS}:${Date.now()}`,
-          });
           break;
         }
 
@@ -86,11 +81,14 @@ new Worker(
           // itself hasn't changed, so we always fetch stats for every campaign ever synced.
           const allCampaignIds = await getAllKlaviyoCampaignIds();
 
-          // Fixed 90-day lookback — not lastSyncedAt — because stats accumulate over time
-          // and must be re-fetched on every run to stay current.
+          // campaign-values-reports enforces a hard 1-year maximum on the timeframe.
+          // Start from the oldest campaign send_time so all campaigns are included,
+          // but cap at 1 year ago to stay within Klaviyo's limit.
           const now = syncedAt.toISOString();
-          const statsStart = new Date(syncedAt);
-          statsStart.setUTCDate(statsStart.getUTCDate() - 90);
+          const oneYearAgo = new Date(syncedAt);
+          oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+          const oldestSendTime = await getOldestKlaviyoCampaignSendTime();
+          const statsStart = oldestSendTime && oldestSendTime > oneYearAgo ? oldestSendTime : oneYearAgo;
 
           let statsSaved = 0;
 
@@ -98,7 +96,7 @@ new Worker(
           // If the job fails mid-way, already-upserted batches persist and retry re-upserts
           // them safely via ON DUPLICATE KEY UPDATE.
           await fetchCampaignStats(allCampaignIds, statsStart.toISOString(), now, async (batch) => {
-            const rows = batch.map((r) => transformCampaignStat(r, syncedAt));
+            const rows = batch.map((r) => transformCampaignStat(r, syncedAt)).filter((r): r is NonNullable<typeof r> => r !== null);
             statsSaved += await upsertCampaignStats(rows);
           });
 
@@ -193,19 +191,33 @@ new Worker(
           throw new Error(`klaviyoWorker: unknown job name: ${job.name}`);
       }
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      await logFailure(syncLog.id, {
-        errorMessage: errorMessage,
-        durationMs: Date.now() - startedAt,
-      });
+      if (syncLog) {
+        try {
+          await logFailure(syncLog.id, {
+            errorMessage: extractErrorMessage(error),
+            durationMs: Date.now() - startedAt,
+          });
+        } catch (logErr) {
+          logger.error({ err: logErr }, 'failed to update sync_log on job failure');
+        }
+      }
       throw error;
     }
   },
   {
     connection,
     concurrency: 1,    // campaign-values-reports is 2 req/min — never run two Klaviyo jobs in parallel
-    lockDuration: 600000, // 10 min — campaign-stats sleeps 35s between batches, exceeds default 30s lock
+    lockDuration: 3600000, // 60 min — profiles/events fetch large datasets that exceed the old 10 min lock
     limiter: { max: 3, duration: 1000 },
   },
 );
+
+klaviyoWorker.on('stalled', async (jobId: string, jobName: string) => {
+  try {
+    await logStalled(KLAVIYO_PLATFORM, jobName);
+    logger.warn({ platform: KLAVIYO_PLATFORM, jobId, jobName }, 'stalled job marked failed in sync_logs');
+  } catch (err) {
+    logger.error({ platform: KLAVIYO_PLATFORM, jobId, err }, 'failed to update sync_log for stalled job');
+  }
+});
 }

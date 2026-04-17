@@ -21,9 +21,11 @@ type CustomersResult = {
   };
 };
 
-export async function fetchCustomers(lastSyncedAt: Date | null): Promise<ShopifyCustomerNode[]> {
+export async function fetchCustomers(
+  lastSyncedAt: Date | null,
+  onPage: (page: ShopifyCustomerNode[]) => Promise<void>,
+): Promise<void> {
   const client = await createShopifyClient();
-  const results: ShopifyCustomerNode[] = [];
   let cursor: string | null = null;
 
   const queryFilter = lastSyncedAt
@@ -38,12 +40,10 @@ export async function fetchCustomers(lastSyncedAt: Date | null): Promise<Shopify
 
     logger.info({ platform: SHOPIFY_PLATFORM, module: 'customers', fetched: nodes.length });
 
-    results.push(...nodes);
+    if (nodes.length > 0) await onPage(nodes);
 
     cursor = result.data.customers.pageInfo.hasNextPage
       ? result.data.customers.pageInfo.endCursor
       : null;
   } while (cursor);
-
-  return results;
 }

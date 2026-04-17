@@ -26,9 +26,11 @@ type ProductsResult = {
   };
 };
 
-export async function fetchProducts(lastSyncedAt: Date | null): Promise<ShopifyProductNode[]> {
+export async function fetchProducts(
+  lastSyncedAt: Date | null,
+  onPage: (page: ShopifyProductNode[]) => Promise<void>,
+): Promise<void> {
   const client = await createShopifyClient();
-  const results: ShopifyProductNode[] = [];
   let cursor: string | null = null;
 
   const queryFilter = lastSyncedAt
@@ -43,12 +45,10 @@ export async function fetchProducts(lastSyncedAt: Date | null): Promise<ShopifyP
 
     logger.info({ platform: SHOPIFY_PLATFORM, module: 'products', fetched: nodes.length });
 
-    results.push(...nodes);
+    if (nodes.length > 0) await onPage(nodes);
 
     cursor = result.data.products.pageInfo.hasNextPage
       ? result.data.products.pageInfo.endCursor
       : null;
   } while (cursor);
-
-  return results;
 }

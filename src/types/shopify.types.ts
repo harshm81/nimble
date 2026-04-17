@@ -6,7 +6,7 @@ export interface ShopifyPageInfo {
 export interface ShopifyMoney {
   shopMoney: {
     amount: string;
-  };
+  } | null;
 }
 
 /* ---------------- ORDERS ---------------- */
@@ -43,8 +43,9 @@ export interface ShopifyOrderNode {
   updatedAt: string | null;
   lineItems: {
     nodes: ShopifyLineItemNode[];
+    pageInfo: { hasNextPage: boolean };
   };
-  refunds: ShopifyRefundNode[];
+  refunds: ShopifyRefundNode[] | null;
 }
 
 /* ---------------- CUSTOMERS ---------------- */
